@@ -48,6 +48,7 @@ model Wallet {
 
   customer    Customer      @relation(fields: [customerId], references: [id])
   Transaction Transaction[]
+  Payout      Payout[]
 
   @@unique([customerId, currency])
 }
@@ -61,7 +62,8 @@ model Transaction {
   metadata  Json?
   createdAt DateTime @default(now())
 
-  wallet Wallet @relation(fields: [walletId], references: [id])
+  wallet Wallet   @relation(fields: [walletId], references: [id])
+  Payout Payout[]
 
   @@index([walletId, createdAt])
 }
@@ -77,4 +79,40 @@ model PixWebhookEvent {
   processedAt DateTime?
   error       String?
   // opcionalmente: @@unique([provider, endToEndId])
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  CONFIRMED
+  FAILED
+  CANCELED
+}
+
+model Payout {
+  id           String       @id @default(cuid())
+  walletId     String
+  amount       Decimal      @db.Decimal(18, 2)
+  status       PayoutStatus @default(PENDING)
+  requestId    String       @unique // idempotência da requisição do seu sistema
+  endToEndId   String?      @unique // quando o banco retornar
+  bankRequest  Json? // request enviado ao banco
+  bankResponse Json? // resposta imediata
+  error        String?
+
+  // Beneficiário (quem recebe)
+  beneficiaryName      String
+  beneficiaryTaxNumber String
+  pixKey               String
+  pixKeyType           String // CPF/CNPJ/EMAIL/CELULAR/CHAVE_ALEATORIA
+  // opcional: dados bancários se o banco exigir
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wallet    Wallet       @relation(fields: [walletId], references: [id])
+  debitTx   Transaction? @relation(fields: [debitTxId], references: [id])
+  debitTxId String?
+
+  @@index([walletId, status, createdAt])
 }
