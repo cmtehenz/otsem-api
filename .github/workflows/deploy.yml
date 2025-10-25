@@ -31,21 +31,12 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DO_HOST }}
-          username: ${{ secrets.DO_USER }} # deploy
+          username: ${{ secrets.DO_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
-          source: |
-            package.json
-            package-lock.json
-            nest-cli.json
-            tsconfig*.json
-            src
-            prisma
-            ecosystem.config.js
+          source: ./
           target: /var/www/otsem-api
-          strip_components: 0
           overwrite: true
-          # rm: false   # (padrão) não tente remover a pasta alvo
 
       # Executar comandos de deploy no servidor
       - name: Remote deploy commands
@@ -59,17 +50,14 @@ jobs:
             set -e
             cd /var/www/otsem-api
 
-            # instalar deps em prod
             npm ci --omit=dev
 
-            # Prisma (usa prisma/.env em produção; garanta que o arquivo existe no servidor)
+            # prisma: use o prisma/.env do servidor (produçao)
             npx prisma generate --schema prisma/schema.prisma
             npx prisma migrate deploy --schema prisma/schema.prisma
 
-            # build no servidor (binários corretos)
             npm run build
 
-            # pm2
             if pm2 describe otsem-api > /dev/null; then
               pm2 reload otsem-api
             else
