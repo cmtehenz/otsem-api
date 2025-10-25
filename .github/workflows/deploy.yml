@@ -31,8 +31,8 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DO_HOST }}
-          username: ${{ secrets.DO_USER }} # deploy
-          key: ${{ secrets.DO_SSH_KEY }} # chave p/ conectar no servidor (não é a deploy key do repo)
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
           script: |
             set -e
@@ -49,20 +49,22 @@ jobs:
               fi
             fi
 
-            # garanta que a branch é main (ajuste se usar master)
             git fetch --depth=1 origin main
             git checkout -B main origin/main
 
-            # deps de produção
-            npm ci --omit=dev
+            # 1) instale TUDO (inclui @nestjs/cli e prisma CLI)
+            npm ci
 
-            # prisma (usa prisma/.env no servidor)
+            # 2) prisma
             npx prisma generate --schema prisma/schema.prisma
             npx prisma migrate deploy --schema prisma/schema.prisma
 
-            # build
+            # 3) build com nest (agora existe)
             npm run build
 
-            # pm2 zero-downtime
+            # 4) opcional: remover dev deps para deixar leve
+            npm prune --omit=dev
+
+            # 5) pm2
             pm2 reload otsem-api || pm2 start ecosystem.config.js
             pm2 save
