@@ -19,6 +19,6 @@ async function bootstrap(): Promise<void> {
   SwaggerModule.setup('/docs', app, document);
 
   await app.listen(process.env.PORT || 3333);
-  // console.log(`http://localhost:${process.env.PORT || 3000}/docs`);
+  console.log(`http://localhost:${process.env.PORT || 3000}/docs`);
 }
 bootstrap();
