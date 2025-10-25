@@ -1,0 +1,88 @@
+name: Deploy to DigitalOcean Droplet
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # Opcional: checar build localmente (CI)
+      - name: Install deps
+        run: npm ci
+
+      - name: Typecheck & Build
+        run: |
+          npm run build
+
+      # Copiar código para o droplet (sem node_modules, sem artefatos de CI)
+      - name: Copy files to Droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: 22
+          source: |
+            ./
+          target: /var/www/otsem-api
+          rm: true
+          # ignore arquivos que não precisam subir
+          ignore: |
+            .git
+            .github
+            node_modules
+            **/node_modules
+            dist
+            .env
+            prisma/dev.db
+            coverage
+            README.md
+
+      # Executar comandos de deploy no servidor
+      - name: Remote deploy commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd /var/www/otsem-api
+
+            # garantir Node/PM2 atualizados (idempotente)
+            node -v || sudo apt install -y nodejs
+            pm2 -v || sudo npm i -g pm2
+
+            # instalar deps em produção
+            npm ci --omit=dev
+
+            # Prisma: apontar para o .env do Prisma em produção (se você usar)
+            # Ex.: echo 'DATABASE_URL="postgresql://...neon...&sslmode=require&schema=public"' > prisma/.env
+
+            # gerar client e aplicar migrações
+            npx prisma generate --schema prisma/schema.prisma
+            npx prisma migrate deploy --schema prisma/schema.prisma
+
+            # buildar no servidor (garante binários nativos corretos)
+            npm run build
+
+            # subir ou recarregar com PM2
+            if pm2 describe otsem-api > /dev/null; then
+              pm2 reload otsem-api
+            else
+              pm2 start ecosystem.config.js
+            fi
+            pm2 save
