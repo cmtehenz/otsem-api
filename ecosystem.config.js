@@ -3,7 +3,7 @@ module.exports = {
   apps: [
     {
       name: "otsem-api",
-      script: "dist/main.js",
+      script: "dist/src/main.js",
       cwd: "/var/www/otsem-api",
       instances: 1,            // pode aumentar depois
       exec_mode: "fork",       // "cluster" quando estiver estável
