@@ -4,6 +4,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as bodyParser from 'body-parser';
 
+// teste 
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { cors: true });
 
