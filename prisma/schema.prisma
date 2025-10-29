@@ -29,13 +29,96 @@ enum TxType {
 }
 
 model Customer {
-  id                      String   @id @default(cuid())
-  name                    String
-  taxNumber               String? // CPF/CNPJ
-  externalAccountHolderId String?  @unique // GUID vindo do banco (AccoutHolderId)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  wallets                 Wallet[]
+  id                      String    @id @default(uuid())
+  // Você pode preencher/relacionar dinamicamente por CPF/CNPJ (taxNumber) quando fizer o match:
+  name                    String?
+  taxNumber               String?   @unique // CPF/CNPJ sem máscara (opcional)
+  email                   String?
+  deposits                Deposit[]
+  payments                Payment[]
+  externalAccountHolderId String?   @unique // ID do correntista na BRX
+  refunds                 Refund[]
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  Wallet                  Wallet[]
+}
+
+model Refund {
+  id          String    @id @default(uuid())
+  endToEnd    String    @unique
+  // Demais campos a partir do endpoint "Consulta de Devolução" (não fornecidos na amostra).
+  status      String?
+  statusId    Int?
+  valueCents  Int?
+  refundDate  DateTime?
+  bankPayload Json
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([customerId])
+}
+
+model Payment {
+  id                  String    @id @default(uuid())
+  endToEnd            String    @unique
+  identifier          String? // enviado pelo integrador quando solicita o pagamento
+  paymentValue        Int // em centavos
+  paymentDate         DateTime
+  receiverName        String?
+  receiverTaxNumber   String?
+  receiverBankCode    String?
+  receiverBankBranch  String?
+  receiverBankAccount String?
+  receiverISPB        String?
+  receiverPixKey      String?
+  payerName           String?
+  payerTaxNumber      String?
+  payerBankCode       String?
+  payerBankBranch     String?
+  payerBankAccount    String?
+  payerISPB           String?
+  status              String?
+  statusId            Int?
+  errorMessage        String?
+  bankPayload         Json
+  customerId          String?
+  customer            Customer? @relation(fields: [customerId], references: [id])
+  createdAt           DateTime  @default(now())
+
+  @@index([customerId])
+}
+
+model Deposit {
+  id                       String    @id @default(uuid())
+  endToEnd                 String    @unique
+  accountHolderId          String? // Accou(n)tHolderId (aceitamos ambos nos webhooks)
+  receiptValue             Int // em centavos (BRL)
+  receiptDate              DateTime
+  payerName                String?
+  payerTaxNumber           String? // CPF/CNPJ do pagador
+  payerBankCode            String?
+  payerBankBranch          String?
+  payerBankAccount         String?
+  payerBankAccountDigit    String?
+  payerISPB                String?
+  payerMessage             String?
+  receiverName             String?
+  receiverTaxNumber        String?
+  receiverBankCode         String?
+  receiverBankBranch       String?
+  receiverBankAccount      String?
+  receiverBankAccountDigit String?
+  receiverISPB             String?
+  receiverPixKey           String?
+  status                   String? // "confirmed", etc.
+  statusId                 Int?
+  bankPayload              Json // payload bruto como veio
+  customerId               String?
+  customer                 Customer? @relation(fields: [customerId], references: [id])
+  createdAt                DateTime  @default(now())
+
+  @@index([customerId])
 }
 
 model Wallet {
@@ -115,4 +198,18 @@ model Payout {
   debitTxId String?
 
   @@index([walletId, status, createdAt])
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  kind        String // 'cash-in' | 'cash-out' | 'refunds'
+  endToEnd    String?
+  receivedAt  DateTime @default(now())
+  rawBody     Json
+  headers     Json
+  ip          String?
+  signatureOk Boolean? // caso a BRX passe a assinar; por ora, null
+
+  @@index([kind])
+  @@index([endToEnd])
 }
