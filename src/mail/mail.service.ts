@@ -13,7 +13,7 @@ export class MailService {
         const html = passwordResetHtml({ resetUrl, productName });
 
         await this.resend.emails.send({
-            from: `Otsem Bank <no-reply@otsembank.com>`, // domínio verificado no Resend
+            from: `Otsem Bank <no-reply@notify.otsembank.com>`, // domínio verificado no Resend
             to,
             subject: 'Redefinição de senha',
             html,
