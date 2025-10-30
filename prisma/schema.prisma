@@ -13,14 +13,15 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      Role     @default(ADMIN)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String               @id @default(cuid())
+  email              String               @unique
+  password           String
+  name               String?
+  role               Role                 @default(ADMIN)
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  PasswordResetToken PasswordResetToken[]
 }
 
 enum TxType {
@@ -212,4 +213,19 @@ model WebhookEvent {
 
   @@index([kind])
   @@index([endToEnd])
+}
+
+// prisma/schema.prisma
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String // hash do token (nunca salve o token puro)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([tokenHash])
 }
