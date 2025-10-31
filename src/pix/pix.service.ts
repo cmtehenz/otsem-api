@@ -13,6 +13,7 @@ import {
     BrxListKeysRaw,
     ListKeysResponseDto,
 } from './dtos/list-keys.dto';
+import { BrxPrecheckRaw, PrecheckKeyResponseDto } from './dtos/precheck-key.dto';
 
 @Injectable()
 export class PixService {
@@ -92,6 +93,84 @@ export class PixService {
         } catch (err) {
             const ax = err as AxiosError<{ message?: string }>;
             const msg = ax.response?.data?.message ?? ax.message ?? 'Erro ao criar chave na BRX';
+            throw new HttpException(msg, ax.response?.status ?? 502);
+        }
+    }
+
+    async precheckKey(
+        accountHolderId: string,
+        pixKey: string,
+        value?: string,
+    ): Promise<PrecheckKeyResponseDto> {
+        const token = await this.brxAuth.getAccessToken();
+        const qp = value ? `?value=${encodeURIComponent(value)}` : '';
+        const url = `${this.baseUrl}/pix/keys/account-holders/${encodeURIComponent(accountHolderId)}/key/${encodeURIComponent(pixKey)}${qp}`;
+
+        try {
+            const resp = await firstValueFrom(
+                this.http.get<BrxPrecheckRaw>(url, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+            );
+
+            const raw = resp.data;
+            const d = raw?.Extensions?.Data;
+            if (!d) {
+                throw new HttpException('Resposta inesperada da BRX', 502);
+            }
+
+            return {
+                name: d.Name,
+                taxNumber: d.TaxNumber,
+                key: d.Key,
+                keyType: d.KeyType,
+                keyTypeId: Number(d.KeyTypeId),
+                bankData: d.BankData
+                    ? {
+                        ispb: d.BankData.Ispb,
+                        name: d.BankData.Name,
+                        bankCode: d.BankData.BankCode ?? null,
+                        branch: d.BankData.Branch,
+                        account: d.BankData.Account,
+                        accountType: d.BankData.AccountType,
+                        accountTypeId: Number(d.BankData.AccountTypeId),
+                    }
+                    : undefined,
+                endToEnd: d.EndToEnd,
+                message: raw?.Extensions?.Message,
+            };
+        } catch (err) {
+            const ax = err as AxiosError<{ message?: string }>;
+            const msg = ax.response?.data?.message ?? ax.message ?? 'Erro na pré-consulta BRX';
+            throw new HttpException(msg, ax.response?.status ?? 502);
+        }
+    }
+
+    /** Remove (cancela) uma chave Pix
+     *  OBS: o caminho abaixo segue a convenção REST mais comum.
+     *  Caso a BRX use um endpoint diferente no seu ambiente,
+     *  ajuste a URL aqui.
+     */
+    async deleteKey(
+        accountHolderId: string,
+        pixKey: string,
+    ): Promise<{ ok: true; message?: string }> {
+        const token = await this.brxAuth.getAccessToken();
+
+        // endpoint provável; ajuste se sua BRX usar outro caminho:
+        const url = `${this.baseUrl}/pix/keys/account-holders/${encodeURIComponent(accountHolderId)}/key/${encodeURIComponent(pixKey)}`;
+
+        try {
+            const resp = await firstValueFrom(
+                this.http.delete<{ StatusCode?: number; Extensions?: { Message?: string } }>(url, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+            );
+
+            return { ok: true, message: resp.data?.Extensions?.Message };
+        } catch (err) {
+            const ax = err as AxiosError<{ message?: string }>;
+            const msg = ax.response?.data?.message ?? ax.message ?? 'Erro ao remover chave BRX';
             throw new HttpException(msg, ax.response?.status ?? 502);
         }
     }
