@@ -142,7 +142,11 @@ export class PixService {
         pixKey: string,
     ): Promise<{ ok: true; message?: string }> {
         const token = await this.brxAuth.getAccessToken();
-        const url = `${this.baseUrl}/pix/keys/account-holders/${encodeURIComponent(accountHolderId)}/key/${encodeURIComponent(pixKey)}`;
+
+        // ✅ URL conforme documentação oficial
+        const url = `${this.baseUrl}/pix/account-holders/${encodeURIComponent(accountHolderId)}/keys/${encodeURIComponent(pixKey)}`;
+
+        console.log('🟠 [BRX DELETE] URL chamada →', url);
 
         try {
             const resp = await firstValueFrom(
@@ -150,11 +154,17 @@ export class PixService {
                     headers: { Authorization: `Bearer ${token}` },
                 }),
             );
-            return { ok: true, message: resp.data?.Extensions?.Message };
+
+            console.log('🟢 [BRX DELETE] Resposta:', resp.data);
+
+            return { ok: true, message: resp.data?.Extensions?.Message ?? "Chave Pix removida com sucesso" };
         } catch (err) {
             const ax = err as AxiosError<{ message?: string }>;
-            const msg = ax.response?.data?.message ?? ax.message ?? "Erro ao remover chave BRX";
+            console.error('🔴 [BRX DELETE] Erro:', ax.response?.data || ax.message);
+            const msg = ax.response?.data?.message ?? ax.message ?? 'Erro ao remover chave BRX';
             throw new HttpException(msg, ax.response?.status ?? 502);
         }
     }
+
+
 }

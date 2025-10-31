@@ -5,7 +5,7 @@ import { CreatePixKeyDto, BrxCreateKeyRaw } from './dtos/create-key.dto';
 import { ListKeysResponseDto } from './dtos/list-keys.dto';
 import { PrecheckKeyResponseDto } from './dtos/precheck-key.dto';
 
-@Controller('pix/keys/')
+@Controller('pix/keys')
 export class PixController {
     constructor(private readonly pix: PixService) { }
 
@@ -17,7 +17,7 @@ export class PixController {
     }
 
     // src/pix/pix.controller.ts
-    @Post('keys/account-holders/:accountHolderId')
+    @Post('account-holders/:accountHolderId')
     async createKey(
         @Param('accountHolderId') id: string,
         @Body() dto: CreatePixKeyDto,
@@ -41,6 +41,7 @@ export class PixController {
         @Param('accountHolderId') accountHolderId: string,
         @Param('pixKey') pixKey: string,
     ): Promise<{ ok: true; message?: string }> {
+        console.log('🟢 [PIX] DELETE chamado com:', { accountHolderId, pixKey });
         return this.pix.deleteKey(accountHolderId, pixKey);
     }
 }
