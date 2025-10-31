@@ -5,7 +5,7 @@ import { CreatePixKeyDto, BrxCreateKeyRaw } from './dtos/create-key.dto';
 import { ListKeysResponseDto } from './dtos/list-keys.dto';
 import { PrecheckKeyResponseDto } from './dtos/precheck-key.dto';
 
-@Controller('pix/keys')
+@Controller('pix/keys/')
 export class PixController {
     constructor(private readonly pix: PixService) { }
 
@@ -16,13 +16,15 @@ export class PixController {
         return this.pix.listKeys(accountHolderId);
     }
 
-    @Post('account-holders/:accountHolderId')
-    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-    createKey(
-        @Param('accountHolderId') accountHolderId: string,
-        @Body() body: CreatePixKeyDto,
-    ): Promise<BrxCreateKeyRaw> {
-        return this.pix.createKey(accountHolderId, { keyType: body.keyType, pixKey: body.pixKey });
+    // src/pix/pix.controller.ts
+    @Post('keys/account-holders/:accountHolderId')
+    async createKey(
+        @Param('accountHolderId') id: string,
+        @Body() dto: CreatePixKeyDto,
+    ) {
+        // Log de entrada (ver o que o FRONT enviou)
+        console.log('🟡 [PIX] createKey BODY recebido:', dto);
+        return this.pix.createKey(id, { keyType: dto.keyType, pixKey: dto.pixKey });
     }
 
     @Get('account-holders/:accountHolderId/key/:pixKey')
