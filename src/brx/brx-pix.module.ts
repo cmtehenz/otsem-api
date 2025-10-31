@@ -2,8 +2,7 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { ConfigModule } from "@nestjs/config";
-import { BrxPixService } from "./brx-pix.service";
-import { BrxPixController } from "./brx-pix.controller";
+import { BrxAuthService } from "./brx-auth.service";
 
 @Module({
     imports: [
@@ -13,8 +12,7 @@ import { BrxPixController } from "./brx-pix.controller";
             // baseURL opcional (já uso no service via this.baseUrl)
         }),
     ],
-    controllers: [BrxPixController],
-    providers: [BrxPixService],
-    exports: [BrxPixService],
+
+    providers: [BrxAuthService],
 })
 export class BrxPixModule { }

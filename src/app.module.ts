@@ -2,11 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from './prisma/prisma.service';
 import { PixModule } from './pix/pix.module';
-import { CashOutModule } from './pix/cashout.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { BrxWebhooksModule } from './brx-webhooks/brx-webhooks.module';
-import { BrxPixModule } from './brx-pix/brx-pix.module';
+import { BrxPixModule } from './brx/brx-pix.module';
 
 
 @Module({
@@ -15,7 +14,7 @@ import { BrxPixModule } from './brx-pix/brx-pix.module';
       isGlobal: true,
       envFilePath: ['.env'],
     }),
-    PixModule, CashOutModule, AuthModule, UsersModule, BrxWebhooksModule, BrxPixModule,
+    PixModule, AuthModule, UsersModule, BrxWebhooksModule, BrxPixModule,
 
   ],
   providers: [PrismaService],
