@@ -1,10 +1,19 @@
+// src/pix/transactions.module.ts
 import { Module } from '@nestjs/common';
-import { PixTransactionsController } from './pix-transactions.controller';
+import { HttpModule } from '@nestjs/axios';
 import { PixTransactionsService } from './pix-transactions.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PixTransactionsController } from './pix-transactions.controller';
+import { BrxPixModule } from '../brx/brx-pix.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
+    imports: [
+        HttpModule,        // <- necessário para injetar HttpService
+        PrismaModule,
+        BrxPixModule,      // <- exporta BrxAuthService
+    ],
     controllers: [PixTransactionsController],
-    providers: [PixTransactionsService, PrismaService],
+    providers: [PixTransactionsService],
+    exports: [PixTransactionsService],
 })
 export class PixTransactionsModule { }

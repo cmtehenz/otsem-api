@@ -1,40 +1,48 @@
-import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
+// src/pix/transactions/pix-transactions.controller.ts
+import { Controller, Get, Post, Query, Param, Body } from '@nestjs/common';
 import { PixTransactionsService } from './pix-transactions.service';
-import { SendPixDto } from './dto/send-pix.dto';
-import { ReceivePixDto } from './dto/receive-pix.dto';
 
 @Controller('pix/transactions')
 export class PixTransactionsController {
     constructor(private readonly svc: PixTransactionsService) { }
 
-    @Get('account-holders/:accountHolderId')
-    async history(
+    @Get('account-holders/:accountHolderId/precheck')
+    async precheck(
         @Param('accountHolderId') accountHolderId: string,
-        @Query('page') page = '1',
-        @Query('pageSize') pageSize = '10',
-        @Query('status') status?: string,
+        @Query('pixKey') pixKey: string,
+        @Query('value') value: string,
     ) {
-        return this.svc.getHistory({
-            accountHolderId,
-            page: Number(page) || 1,
-            pageSize: Number(pageSize) || 10,
-            status: status?.toLowerCase(),
-        });
+        return this.svc.precheckKey(accountHolderId, pixKey, value);
     }
 
     @Post('account-holders/:accountHolderId/send')
     async send(
-        @Param('accountHolderId') accountHolderId: string,
-        @Body() dto: SendPixDto,
+        @Param('accountHolderId') id: string,
+        @Body() body: { pixKey: string; amount: string; description?: string; runPrecheck?: boolean }
     ) {
-        return this.svc.sendPix(accountHolderId, dto);
+        return this.svc.sendPix(id, body);
     }
 
     @Post('account-holders/:accountHolderId/receive')
     async receive(
-        @Param('accountHolderId') accountHolderId: string,
-        @Body() dto: ReceivePixDto,
+        @Param('accountHolderId') id: string,
+        @Body() body: { amount: string; description?: string }
     ) {
-        return this.svc.createCharge(accountHolderId, dto);
+        return this.svc.createCharge(id, body);
+    }
+
+    @Get('account-holders/:accountHolderId')
+    async history(
+        @Param('accountHolderId') id: string,
+        @Query('page') page = '1',
+        @Query('pageSize') pageSize = '10',
+        @Query('status') status?: string
+    ) {
+        return this.svc.getHistory({
+            accountHolderId: id,
+            page: Number(page),
+            pageSize: Number(pageSize),
+            status,
+        });
     }
 }

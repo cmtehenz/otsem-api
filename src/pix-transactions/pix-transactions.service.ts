@@ -1,5 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, HttpException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';;
 import { PrismaService } from '../prisma/prisma.service';
+import { BrxAuthService } from '../brx/brx-auth.service';
+import { v4 as uuidv4 } from 'uuid';
+import { firstValueFrom } from 'rxjs';
+
 
 type HistoryParams = {
     accountHolderId: string;
@@ -8,14 +13,27 @@ type HistoryParams = {
     status?: string; // created|pending|confirmed|failed|refunded
 };
 
+type SendPixInput = {
+    pixKey: string;
+    amount: string;           // "10.00"
+    description?: string;     // Message (até 140 chars)
+    identifier?: string;      // idempotência (opcional). Se não vier, geramos.
+    name?: string;            // opcional; se não vier, tentamos pré-consulta
+    taxNumber?: string;       // opcional; se não vier, tentamos pré-consulta
+    runPrecheck?: boolean;    // default true
+};
+
 @Injectable()
 export class PixTransactionsService {
-    constructor(private prisma: PrismaService) { }
+    private readonly baseUrl = process.env.BRX_BASE_URL ?? 'https://apisbank.brxbank.com.br';
 
-    private toBRL(n: number | string) {
-        const x = Number(n);
-        return Math.round(x * 100); // cents
-    }
+
+    constructor(
+        private readonly http: HttpService,
+        private readonly prisma: PrismaService,
+        private readonly brxAuth: BrxAuthService,) { }
+
+
     private centsToReal(cents: number | null): number {
         if (cents == null) return 0;
         return Number(cents) / 100;
@@ -105,33 +123,122 @@ export class PixTransactionsService {
         };
     }
 
-    /** Envia Pix (stub para ligar na BRX). */
-    async sendPix(accountHolderId: string, dto: { pixKey: string; amount: string; description?: string; endToEnd?: string }) {
-        // TODO: integrar no seu client BRX real (usar dto.endToEnd se vier da pré-consulta)
-        // Exemplo de “sucesso” simulado:
-        const endToEndId = dto.endToEnd || `E2E-${Date.now()}`;
+    /* =========================================================
+     * PRÉ-CONSULTA por chave (tenta caminhos conhecidos)
+     * Retorna: { endToEndPixKey, name, taxNumber, bankData }
+     * ========================================================= */
+    async precheckKey(accountHolderId: string, pixKey: string, value: string) {
+        const token = await this.brxAuth.getAccessToken();
+        const headers = { Authorization: `Bearer ${token}` };
 
-        // opcional: registrar um `payment` local em “PROCESSING”
+        // 1) Caminho mais provável (pagamentos)
+        const url1 = `${this.baseUrl}/pix/payments/account-holders/${encodeURIComponent(accountHolderId)}/key/${encodeURIComponent(pixKey)}?value=${encodeURIComponent(value)}`;
+
+        // 2) Caminho alternativo (chaves)
+        const url2 = `${this.baseUrl}/pix/keys/account-holders/${encodeURIComponent(accountHolderId)}/key/${encodeURIComponent(pixKey)}?value=${encodeURIComponent(value)}`;
+
+        const tryFetch = async (url: string) => {
+            try {
+                const { data } = await firstValueFrom(this.http.get(url, { headers }));
+                // Normaliza campos conhecidos
+                const ext = data?.Extensions || data?.extensions;
+                const d = ext?.Data || ext?.data;
+
+                return {
+                    endToEndPixKey:
+                        d?.EndToEndPixKey || d?.EndToEnd || d?.endToEndPixKey || d?.endToEnd || null,
+                    name: d?.Name || d?.name || null,
+                    taxNumber: d?.TaxNumber || d?.taxNumber || null,
+                    bankData: d?.BankData || d?.bankData || null,
+                    raw: data,
+                };
+            } catch (err: any) {
+                // 404/400 aqui só indica que essa rota não está disponível/esperando outro shape
+                return null;
+            }
+        };
+
+        const a = await tryFetch(url1);
+        if (a?.endToEndPixKey) return a;
+
+        const b = await tryFetch(url2);
+        if (b?.endToEndPixKey) return b;
+
+        throw new BadRequestException('Não foi possível pré-consultar a chave Pix no provedor.');
+    }
+
+    /* =========================================================
+     * SEND PIX (obrigatório passar por pré-consulta)
+     * 1) faz precheck -> obtém EndToEndPixKey + Nome/CPF/CNPJ
+     * 2) efetiva pagamento via /key/previous-query
+     * 3) grava PAYMENT como PROCESSING; webhook encerra o fluxo
+     * ========================================================= */
+    async sendPix(
+        accountHolderId: string,
+        dto: { pixKey: string; amount: string; description?: string; runPrecheck?: boolean }
+    ) {
+        const value = Number(dto.amount);
+        if (!Number.isFinite(value) || value <= 0) {
+            throw new BadRequestException('Valor inválido.');
+        }
+        // BRX tem mínimo (ex.: R$1,00). Ajuste se precisar:
+        if (value < 1) throw new BadRequestException('O valor mínimo de pagamento é R$ 1,00.');
+
+        const message = (dto.description ?? '').slice(0, 140);
+        const identifier = uuidv4();
+
+        // Pré-consulta é obrigatória para cumprir sua exigência
+        const pre = await this.precheckKey(accountHolderId, dto.pixKey.trim(), dto.amount.trim());
+        if (!pre?.endToEndPixKey) {
+            throw new BadRequestException('Pré-consulta não retornou EndToEndPixKey.');
+        }
+
+        // Efetiva pagamento com previous-query
+        const token = await this.brxAuth.getAccessToken();
+        const url = `${this.baseUrl}/pix/payments/account-holders/${encodeURIComponent(accountHolderId)}/key/previous-query`;
+        const body = {
+            EndToEndPixKey: pre.endToEndPixKey,
+            Value: value,
+            Message: message,
+            Identifier: identifier,
+        };
+
+        const { data } = await firstValueFrom(
+            this.http.post(url, body, {
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            }),
+        );
+
+        // Normaliza campos do retorno
+        const ext = data?.Extensions || data?.extensions;
+        const d = ext?.Data || ext?.data || data;
+
+        const endToEnd = d?.EndToEndPixKey || d?.endToEndPixKey || pre.endToEndPixKey || null;
+        const receiverName = d?.Name || d?.name || pre?.name || null;
+        const receiverTax = d?.TaxNumber || d?.taxNumber || pre?.taxNumber || null;
+
+        // 💾 grava pagamento como PROCESSING (webhook confirmará)
         await this.prisma.payment.create({
             data: {
-                endToEnd: endToEndId,
-                paymentValue: this.toBRL(dto.amount),
+                endToEnd: endToEnd,
+                identifier,
+                paymentValue: Math.round(value * 100),
                 paymentDate: new Date(),
-                receiverPixKey: dto.pixKey,
-                receiverName: null,
-                receiverTaxNumber: null,
-                payerName: null,
-                payerTaxNumber: null,
-                payerBankCode: null,
-                payerBankBranch: null,
-                payerBankAccount: null,
-                payerISPB: null,
+                receiverPixKey: dto.pixKey.trim(),
+                receiverName: receiverName ?? null,
+                receiverTaxNumber: receiverTax ?? null,
                 status: 'PROCESSING',
-                bankPayload: { accountHolderId, ...dto },
+                bankPayload: data,
             },
         });
 
-        return { ok: true, message: 'PIX enviado (simulado).', endToEndId };
+        return {
+            ok: true,
+            message: 'PIX solicitado com sucesso. Aguardando confirmação da BRX.',
+            identifier,
+            endToEndPixKey: endToEnd,
+            receiver: { name: receiverName, taxNumber: receiverTax, bankData: pre.bankData ?? null },
+        };
     }
 
     /** Cria um charge (QR / copia-e-cola). */

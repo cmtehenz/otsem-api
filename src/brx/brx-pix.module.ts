@@ -14,5 +14,6 @@ import { BrxAuthService } from "./brx-auth.service";
     ],
 
     providers: [BrxAuthService],
+    exports: [BrxAuthService],
 })
 export class BrxPixModule { }
