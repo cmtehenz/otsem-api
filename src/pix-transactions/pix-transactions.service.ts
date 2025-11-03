@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BrxAuthService } from '../brx/brx-auth.service';
 import { v4 as uuidv4 } from 'uuid';
 import { firstValueFrom } from 'rxjs';
+import { QrCodeFormat, StaticQrRequest, StaticQrResult } from './pix.types';
 
 
 type HistoryParams = {
@@ -37,6 +38,11 @@ export class PixTransactionsService {
     private centsToReal(cents: number | null): number {
         if (cents == null) return 0;
         return Number(cents) / 100;
+    }
+
+    private normalizeFormat(fmt?: QrCodeFormat): 'copy-paste' | 'image' | 'both' {
+        if (fmt === 'copy-paste' || fmt === 'image' || fmt === 'both') return fmt;
+        return 'both';
     }
 
     /** Junta `deposit` (entradas) e `payment` (saídas) num feed único */
@@ -241,20 +247,63 @@ export class PixTransactionsService {
         };
     }
 
-    /** Cria um charge (QR / copia-e-cola). */
-    async createCharge(accountHolderId: string, dto: { amount: string; description?: string }) {
-        // TODO: integrar com BRX payload de cobrança imediata e retornar imagem base64 e copia-e-cola reais
-        // Aqui geramos um “fake” base64 só para funcionar o front:
-        const copyPaste = `00020126${Date.now()}52040000...5802BR5910OTSEM LTDA...540${dto.amount}`;
-        const pngBase64 = ''; // se tiver uma lib para gerar QR, preencha aqui
+    /** Gera QR Code estático na BRX e retorna PixCopyPaste e/ou Image base64 */
+    async createStaticQr(accountHolderId: string, dto: StaticQrRequest): Promise<StaticQrResult> {
+        if (!dto.pixKey?.trim()) {
+            throw new BadRequestException('PixKey é obrigatório');
+        }
 
-        // opcional: também pode gravar algo numa tabela “charge” se tiver
+        const token = await this.brxAuth.getAccessToken();
+        const identifier = uuidv4();
+        const format = this.normalizeFormat(dto.format);
+
+        // BRX espera "QRCodeFormat" (static). Vamos mapear o enum nosso para o texto deles.
+        const QRCodeFormat =
+            format === 'both' ? 'both' :
+                format === 'image' ? 'image' : 'copy-paste';
+
+        const url = `${this.baseUrl}/pix/qr-code/account-holders/${accountHolderId}/static`;
+        const body: any = {
+            PixKey: dto.pixKey.trim(),
+            Identifier: identifier,
+            QRCodeFormat,
+        };
+        if (typeof dto.value !== 'undefined') body.Value = Number(dto.value);
+        if (dto.message) body.Message = dto.message.slice(0, 140);
+
+        const { data } = await firstValueFrom(
+            this.http.post(url, body, {
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                timeout: 15000,
+            }),
+        );
+
+        const ext = data?.Extensions ?? data?.extensions;
+        const d = ext?.Data ?? ext?.data ?? {};
+        const qr = d?.QRCodeReturn ?? d?.qrCodeReturn ?? {};
+        const copy = qr?.PixCopyPaste ?? null;
+        const img = qr?.Image ?? qr?.ImageBase64 ?? null;
+
+        // // (opcional) gravar uma "charge" local
+        // await this.prisma.charge?.create?.({
+        //     data: {
+        //         identifier,
+        //         pixKey: dto.pixKey.trim(),
+        //         value: typeof dto.value === 'number' ? Math.round(dto.value * 100) : null,
+        //         message: dto.message ?? null,
+        //         format,
+        //         payload: data,
+        //     },
+        // }).catch(() => { /* tabela pode não existir; ignorar */ });
+
         return {
-            ok: true,
-            message: 'Charge gerada (simulada).',
-            copyPaste,
-            qrCodeBase64: pngBase64 || undefined,
-            txId: `TX-${Date.now()}`,
+            identifier,
+            pixKey: dto.pixKey.trim(),
+            value: typeof dto.value === 'number' ? dto.value : null,
+            message: dto.message ?? null,
+            format,
+            copyPaste: copy,
+            imageBase64: img,
         };
     }
 }

@@ -1,6 +1,7 @@
 // src/pix/transactions/pix-transactions.controller.ts
 import { Controller, Get, Post, Query, Param, Body } from '@nestjs/common';
 import { PixTransactionsService } from './pix-transactions.service';
+import * as pixTypes from './pix.types';
 
 @Controller('pix/transactions')
 export class PixTransactionsController {
@@ -23,12 +24,13 @@ export class PixTransactionsController {
         return this.svc.sendPix(id, body);
     }
 
-    @Post('account-holders/:accountHolderId/receive')
-    async receive(
-        @Param('accountHolderId') id: string,
-        @Body() body: { amount: string; description?: string }
-    ) {
-        return this.svc.createCharge(id, body);
+    @Post('qr/static')
+    async generateStaticQr(
+        @Param('accountHolderId') accountHolderId: string,
+        @Body() body: pixTypes.StaticQrRequest,
+    ): Promise<{ ok: true; message: string; data: pixTypes.StaticQrResult }> {
+        const data = await this.svc.createStaticQr(accountHolderId, body);
+        return { ok: true, message: 'QR Code gerado com sucesso.', data };
     }
 
     @Get('account-holders/:accountHolderId')
