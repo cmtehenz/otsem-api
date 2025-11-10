@@ -1,9 +1,10 @@
+// src/modules/customers/customers.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { ListCustomersDto } from './dto/list-customers.dto';
-import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { UpdateCustomerDto, AccountStatusDto } from './dto/update-customer.dto';
 
 function onlyDigits(v: string): string {
     return (v || '').replace(/\D/g, '');
@@ -13,14 +14,20 @@ function onlyDigits(v: string): string {
 export class CustomersService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async createPF(input: CreatePersonDto) {
+    // ✨ createPF agora aceita userId e status inicial (opcionais)
+    async createPF(
+        input: CreatePersonDto,
+        userId?: string,
+        initialStatus: AccountStatusDto = AccountStatusDto.not_requested,
+    ) {
         const { identifier, productId, person, pixLimits } = input;
         const cpf = onlyDigits(person.cpf);
 
         return this.prisma.customer.create({
             data: {
+                userId: userId ?? null,                    // <<-- vincula ao usuário se vier
                 type: 'PF',
-                accountStatus: 'not_requested',
+                accountStatus: initialStatus,              // <<-- status inicial
                 identifier,
                 productId,
                 email: person.email,
@@ -89,7 +96,7 @@ export class CustomersService {
                     },
                 },
                 ownerships: {
-                    create: company.ownershipStructure.map(o => ({
+                    create: company.ownershipStructure.map((o) => ({
                         name: o.name,
                         cpf: onlyDigits(o.cpf),
                         birthday: new Date(o.birthday),
@@ -142,10 +149,18 @@ export class CustomersService {
         });
     }
 
+    async findByUserId(userId: string) {
+        // pressupõe que você tem unique index em userId na tabela Customer
+        return this.prisma.customer.findUnique({
+            where: { userId },
+            include: { address: true, pixLimits: true, ownerships: true },
+        });
+    }
+
     async resolveCustomerId(taxNumber?: string) {
         if (!taxNumber) return null;
         const clean = onlyDigits(taxNumber);
-        let found = null;
+        let found: any = null;
 
         if (clean.length === 11) {
             found = await this.prisma.customer.findFirst({ where: { cpf: clean } });
@@ -160,7 +175,6 @@ export class CustomersService {
     async update(id: string, input: UpdateCustomerDto) {
         const data: any = {};
 
-        // flatten simples
         if (input.type) data.type = input.type;
         if (input.accountStatus) data.accountStatus = input.accountStatus;
         if (input.identifier) data.identifier = input.identifier;
@@ -178,7 +192,6 @@ export class CustomersService {
         if (input.tradeName) data.tradeName = input.tradeName;
         if (input.cnpj) data.cnpj = onlyDigits(input.cnpj);
 
-        // address
         if (input.address) {
             data.address = {
                 upsert: {
@@ -187,8 +200,6 @@ export class CustomersService {
                         street: input.address.street,
                         number: input.address.number ?? null,
                         complement: input.address.complement ?? null,
-                        city: input.address.city,
-                        state: input.address.state,
                         neighborhood: input.address.neighborhood,
                         cityIbgeCode: input.address.cityIbgeCode,
                     },
@@ -197,8 +208,6 @@ export class CustomersService {
                         street: input.address.street,
                         number: input.address.number ?? null,
                         complement: input.address.complement ?? null,
-                        city: input.address.city,
-                        state: input.address.state,
                         neighborhood: input.address.neighborhood,
                         cityIbgeCode: input.address.cityIbgeCode,
                     },
@@ -206,7 +215,6 @@ export class CustomersService {
             };
         }
 
-        // pixLimits
         if (input.pixLimits) {
             data.pixLimits = {
                 upsert: {
@@ -228,11 +236,10 @@ export class CustomersService {
             };
         }
 
-        // ownerships (estratégia simples: replace tudo)
         if (input.ownerships) {
             await this.prisma.ownership.deleteMany({ where: { customerId: id } });
             data.ownerships = {
-                create: input.ownerships.map(o => ({
+                create: input.ownerships.map((o) => ({
                     name: o.name,
                     cpf: onlyDigits(o.cpf),
                     birthday: new Date(o.birthday),
@@ -249,20 +256,16 @@ export class CustomersService {
     }
 
     async remove(id: string) {
-        // ordem para respeitar FK (se onDelete != Cascade)
         await this.prisma.ownership.deleteMany({ where: { customerId: id } });
         await this.prisma.address.deleteMany({ where: { customerId: id } });
         await this.prisma.pixLimits.deleteMany({ where: { customerId: id } });
         return this.prisma.customer.delete({ where: { id } });
     }
 
-    // src/modules/customers/customers.service.ts
-    async findByUserId(userId: string) {
-        return this.prisma.customer.findUnique({
-            where: { userId },
-            include: {
-                address: true,
-            },
-        });
+    // 🔹 usado em POST /customers/submit-kyc
+    async submitKycByUser(userId: string) {
+        const customer = await this.findByUserId(userId);
+        if (!customer) return null;
+        return this.update(customer.id, { accountStatus: AccountStatusDto.requested });
     }
 }

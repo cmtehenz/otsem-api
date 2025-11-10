@@ -7,6 +7,7 @@ export enum AccountStatusDto {
     requested = 'requested',
     approved = 'approved',
     rejected = 'rejected',
+    in_review = 'in_review',
 }
 
 export enum CustomerTypeDto {

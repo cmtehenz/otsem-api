@@ -284,10 +284,10 @@ enum CustomerType {
 
 enum AccountStatus {
   not_requested
-  received
-  processing
+  requested
   approved
   rejected
+  in_review
 }
 
 model Address {
