@@ -68,9 +68,12 @@ model Customer {
   cnpj      String? @unique
 
   // relações
-  address    Address?
-  pixLimits  PixLimits?
-  ownerships Ownership[]
+  address         Address?
+  pixLimits       PixLimits?
+  ownerships      Ownership[]
+  PixKey          PixKey[]
+  CardTransaction CardTransaction[]
+  Chargeback      Chargeback[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -330,4 +333,148 @@ model Ownership {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
+}
+
+enum PixKeyType {
+  CPF
+  CNPJ
+  EMAIL
+  PHONE
+  RANDOM
+}
+
+enum PixKeyStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+model PixKey {
+  id         String       @id @default(uuid())
+  customerId String
+  keyType    PixKeyType
+  keyValue   String
+  status     PixKeyStatus @default(PENDING)
+
+  // Dados externos do banco
+  externalKeyId String? @unique
+  accountType   String? // CACC (conta corrente), SVGS (poupança)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, keyValue])
+  @@index([customerId, status])
+  @@index([keyValue])
+}
+
+enum CardTransactionStatus {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  CANCELED
+  REFUNDED
+  FAILED
+}
+
+enum CardTransactionType {
+  DEBIT
+  CREDIT
+}
+
+model CardTransaction {
+  id         String @id @default(uuid())
+  customerId String
+
+  // Dados da transação
+  amount   Int // centavos
+  currency String                @default("BRL")
+  type     CardTransactionType
+  status   CardTransactionStatus @default(PENDING)
+
+  // Dados do cartão (últimos 4 dígitos)
+  cardLast4 String
+  cardBrand String // VISA, MASTERCARD, ELO
+
+  // Autorização
+  authorizationCode String?
+  nsu               String? // Número Sequencial Único
+  tid               String? // Terminal ID
+
+  // Descrição
+  merchantName     String?
+  merchantCategory String?
+  description      String?
+
+  // Chargeback
+  hasChargeback Boolean @default(false)
+  chargebackId  String?
+
+  // Auditoria
+  externalTxId String? @unique
+  bankPayload  Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer   Customer?   @relation(fields: [customerId], references: [id])
+  chargeback Chargeback?
+
+  @@index([customerId, status, createdAt])
+  @@index([status])
+}
+
+enum ChargebackStatus {
+  OPENED
+  UNDER_ANALYSIS
+  WON
+  LOST
+  CANCELED
+}
+
+enum ChargebackReason {
+  FRAUD
+  PRODUCT_NOT_RECEIVED
+  PRODUCT_DEFECTIVE
+  DUPLICATE_CHARGE
+  CANCELED_RECURRING
+  OTHER
+}
+
+model Chargeback {
+  id                String @id @default(uuid())
+  cardTransactionId String @unique
+  customerId        String
+
+  // Dados do chargeback
+  amount Int // centavos
+  reason ChargebackReason
+  status ChargebackStatus @default(OPENED)
+
+  // Documentação
+  customerEvidence Json? // documentos/provas do cliente
+  bankEvidence     Json? // resposta do banco
+
+  // Datas importantes
+  openedAt   DateTime  @default(now())
+  deadlineAt DateTime? // prazo para defesa
+  resolvedAt DateTime?
+
+  // Resultado
+  favoredParty String? // MERCHANT | CUSTOMER
+  notes        String?
+
+  externalCaseId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cardTransaction CardTransaction @relation(fields: [cardTransactionId], references: [id])
+  customer        Customer        @relation(fields: [customerId], references: [id])
+
+  @@index([customerId, status])
+  @@index([status, openedAt])
 }

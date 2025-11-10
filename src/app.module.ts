@@ -11,6 +11,7 @@ import { AccreditationModule } from './accreditation/accreditation.module';
 import { PixLimitsModule } from './pix/limits/pix-limits.module';
 import { CustomersModule } from './customers/customers.module';
 import { AdminCustomersModule } from './admin-customers/admin-customers.module';
+import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 
 
 @Module({
@@ -28,7 +29,8 @@ import { AdminCustomersModule } from './admin-customers/admin-customers.module';
     AccreditationModule,
     PixLimitsModule,
     CustomersModule,
-    AdminCustomersModule
+    AdminCustomersModule,
+    AdminDashboardModule,
   ],
   providers: [PrismaService],
 })
