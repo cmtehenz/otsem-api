@@ -95,7 +95,7 @@ export class AccreditationService {
                     data: {
                         externalClientId: d.ClientId,
                         externalAccredId: d.AccreditationId,
-                        accountStatus: AccountStatus.processing,
+                        accountStatus: AccountStatus.in_review,
                     },
                 });
             }
@@ -204,7 +204,7 @@ export class AccreditationService {
                     data: {
                         externalClientId: d.ClientId,
                         externalAccredId: d.AccreditationId,
-                        accountStatus: AccountStatus.processing,
+                        accountStatus: AccountStatus.in_review,
                     },
                 });
             }
