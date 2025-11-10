@@ -1,12 +1,20 @@
 // src/admin-customers/dto/admin-list-customers.dto.ts
+import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
-import { CustomerType, AccountStatus } from '@prisma/client';
+import { AccountStatus, CustomerType } from '@prisma/client';
 
 export class AdminListCustomersDto {
     @IsOptional()
-    @IsString()
-    q?: string;
+    @IsInt()
+    @Min(1)
+    @Type(() => Number)
+    page?: number = 1;
+
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    @Type(() => Number)
+    limit?: number = 20;
 
     @IsOptional()
     @IsEnum(CustomerType)
@@ -14,18 +22,13 @@ export class AdminListCustomersDto {
 
     @IsOptional()
     @IsEnum(AccountStatus)
-    status?: AccountStatus;
+    accountStatus?: AccountStatus;
 
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
     @IsOptional()
-    page?: number = 1;
+    @IsString()
+    search?: string; // busca por nome, email, cpf, cnpj
 
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
-    @Max(100)
     @IsOptional()
-    pageSize?: number = 10;
+    @IsString()
+    userId?: string; // filtrar por usuário vinculado
 }
