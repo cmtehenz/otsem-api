@@ -1,7 +1,7 @@
 // src/modules/customers/customers.controller.ts
 import {
     Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards,
-    UnauthorizedException, ForbiddenException,
+    UnauthorizedException, ForbiddenException, BadRequestException,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreatePersonDto } from './dto/create-person.dto';
@@ -20,6 +20,33 @@ interface AuthRequest extends Request {
         email: string;
         role?: Role;
     };
+}
+
+class UpdateStatusDto {
+    status!: string;
+}
+
+function coerceStatus(input?: string): AccountStatusDto | null {
+    if (!input) return null;
+    const s = input.trim().toLowerCase().replace(/\s|-/g, '_');
+    const map: Record<string, AccountStatusDto> = {
+        approved: AccountStatusDto.approved,
+        approve: AccountStatusDto.approved,
+        kyc_approve: AccountStatusDto.approved,
+        approve_kyc: AccountStatusDto.approved,
+
+        rejected: AccountStatusDto.rejected,
+        reject: AccountStatusDto.rejected,
+        kyc_reject: AccountStatusDto.rejected,
+        reject_kyc: AccountStatusDto.rejected,
+
+        in_review: AccountStatusDto.in_review,
+        review: AccountStatusDto.in_review,
+
+        requested: AccountStatusDto.requested,
+        not_requested: AccountStatusDto.not_requested,
+    };
+    return map[s] ?? null;
 }
 
 @Controller('customers')
@@ -166,32 +193,42 @@ export class CustomersController {
         return this.service.remove(id);
     }
 
-    @Post(':id/kyc/approve')
+    // ==================== ROTAS KYC (PATCH) ====================
+
+    // Aprovar KYC (múltiplos aliases)
+    @Patch(':id/kyc/approve')
+    @Patch(':id/approve-kyc')
+    @Patch(':id/approve')
     @Roles(Role.ADMIN)
-    async approveKycPublic(@Param('id') id: string) {
+    async approveKyc(@Param('id') id: string) {
         return this.service.update(id, { accountStatus: AccountStatusDto.approved });
     }
 
-    @Post(':id/kyc/reject')
+    // Rejeitar KYC (múltiplos aliases)
+    @Patch(':id/kyc/reject')
+    @Patch(':id/reject-kyc')
+    @Patch(':id/reject')
     @Roles(Role.ADMIN)
-    async rejectKycPublic(@Param('id') id: string) {
+    async rejectKyc(@Param('id') id: string) {
         return this.service.update(id, { accountStatus: AccountStatusDto.rejected });
     }
 
-    @Post(':id/kyc/review')
+    // Colocar em revisão
+    @Patch(':id/kyc/review')
+    @Patch(':id/review')
     @Roles(Role.ADMIN)
-    async reviewKycPublic(@Param('id') id: string) {
+    async reviewKyc(@Param('id') id: string) {
         return this.service.update(id, { accountStatus: AccountStatusDto.in_review });
     }
 
+    // Atualizar status genérico via body
     @Patch(':id/status')
     @Roles(Role.ADMIN)
-    async patchStatusPublic(@Param('id') id: string, @Body('status') status: AccountStatus) {
-        // Convert AccountStatus to AccountStatusDto
-        const accountStatusDto = AccountStatusDto[status as keyof typeof AccountStatusDto];
-        if (!accountStatusDto) {
-            throw new ForbiddenException('Status inválido.');
+    async patchStatus(@Param('id') id: string, @Body() dto: UpdateStatusDto) {
+        const status = coerceStatus(dto?.status);
+        if (!status) {
+            throw new BadRequestException('Status inválido. Use: approved, rejected, in_review, requested, not_requested');
         }
-        return this.service.update(id, { accountStatus: accountStatusDto });
+        return this.service.update(id, { accountStatus: status });
     }
 }
