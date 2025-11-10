@@ -4,8 +4,37 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as bodyParser from 'body-parser';
 
-async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { cors: true });
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  interface CorsOriginCallback {
+    (err: Error | null, allow?: boolean): void;
+  }
+
+  interface CustomCorsOptions {
+    origin: (origin: string | undefined, cb: CorsOriginCallback) => void;
+    methods: string[];
+    allowedHeaders: string[];
+    exposedHeaders: string[];
+    credentials: boolean;
+    maxAge: number;
+  }
+
+  app.enableCors({
+    origin: (origin: string | undefined, cb: CorsOriginCallback) => {
+      const allowed: ReadonlyArray<string> = [
+        'https://otsem-web.vercel.app',
+        'http://localhost:3000',
+      ];
+      if (!origin || allowed.includes(origin)) return cb(null, true);
+      return cb(new Error('CORS blocked'), false);
+    },
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Authorization'],
+    credentials: false, // mude para true se usar cookies
+    maxAge: 3600,
+  } as CustomCorsOptions);
 
   app.useGlobalPipes(
     new ValidationPipe({
