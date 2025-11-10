@@ -11,7 +11,7 @@ import { UpdateCustomerDto, AccountStatusDto, CustomerTypeDto } from './dto/upda
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+import { Role, AccountStatus } from '@prisma/client';
 import { Request } from 'express';
 
 interface AuthRequest extends Request {
@@ -164,5 +164,34 @@ export class CustomersController {
     @Roles(Role.ADMIN)
     async remove(@Param('id') id: string) {
         return this.service.remove(id);
+    }
+
+    @Post(':id/kyc/approve')
+    @Roles(Role.ADMIN)
+    async approveKycPublic(@Param('id') id: string) {
+        return this.service.update(id, { accountStatus: AccountStatusDto.approved });
+    }
+
+    @Post(':id/kyc/reject')
+    @Roles(Role.ADMIN)
+    async rejectKycPublic(@Param('id') id: string) {
+        return this.service.update(id, { accountStatus: AccountStatusDto.rejected });
+    }
+
+    @Post(':id/kyc/review')
+    @Roles(Role.ADMIN)
+    async reviewKycPublic(@Param('id') id: string) {
+        return this.service.update(id, { accountStatus: AccountStatusDto.in_review });
+    }
+
+    @Patch(':id/status')
+    @Roles(Role.ADMIN)
+    async patchStatusPublic(@Param('id') id: string, @Body('status') status: AccountStatus) {
+        // Convert AccountStatus to AccountStatusDto
+        const accountStatusDto = AccountStatusDto[status as keyof typeof AccountStatusDto];
+        if (!accountStatusDto) {
+            throw new ForbiddenException('Status inválido.');
+        }
+        return this.service.update(id, { accountStatus: accountStatusDto });
     }
 }

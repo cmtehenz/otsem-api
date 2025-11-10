@@ -6,6 +6,7 @@ import {
     Get,
     Param,
     Patch,
+    Post,
     Query,
     UseGuards,
 } from '@nestjs/common';
@@ -61,5 +62,30 @@ export class AdminCustomersController {
     @Delete(':id')
     async delete(@Param('id') id: string) {
         return this.service.delete(id);
+    }
+
+    // Alias: aprovar KYC
+    @Post(':id/kyc/approve')
+    @Post(':id/approve-kyc')
+    async approveKyc(@Param('id') id: string) {
+        return this.service.updateAccountStatus(id, AccountStatus.approved);
+    }
+
+    // Alias: colocar em revisão
+    @Post(':id/kyc/review')
+    async reviewKyc(@Param('id') id: string) {
+        return this.service.updateAccountStatus(id, AccountStatus.in_review);
+    }
+
+    // Alias: rejeitar KYC
+    @Post(':id/kyc/reject')
+    async rejectKyc(@Param('id') id: string) {
+        return this.service.updateAccountStatus(id, AccountStatus.rejected);
+    }
+
+    // Patch genérico de status (front chamou /customers/:id/status)
+    @Patch(':id/status')
+    async patchStatus(@Param('id') id: string, @Body('status') status: AccountStatus) {
+        return this.service.updateAccountStatus(id, status);
     }
 }
