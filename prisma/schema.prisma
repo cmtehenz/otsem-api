@@ -82,6 +82,8 @@ model Customer {
   Deposit   Deposit[]
   Wallet    Wallet[]
 
+  account Account?
+
   @@index([type, accountStatus])
   @@index([cpf])
   @@index([cnpj])
@@ -179,21 +181,6 @@ model Wallet {
   Payout      Payout[]
 
   @@unique([customerId, currency])
-}
-
-model Transaction {
-  id        String   @id @default(cuid())
-  walletId  String
-  type      TxType
-  amount    Decimal  @db.Decimal(18, 2)
-  reference String   @unique // usamos EndToEnd como idempotência
-  metadata  Json?
-  createdAt DateTime @default(now())
-
-  wallet Wallet   @relation(fields: [walletId], references: [id])
-  Payout Payout[]
-
-  @@index([walletId, createdAt])
 }
 
 model PixWebhookEvent {
@@ -477,4 +464,103 @@ model Chargeback {
 
   @@index([customerId, status])
   @@index([status, openedAt])
+}
+
+model InterWebhookLog {
+  id          String   @id @default(uuid())
+  type        String // pix_received, boleto_paid, etc
+  txid        String?
+  payload     String   @db.Text
+  processedAt DateTime
+  createdAt   DateTime @default(now())
+
+  @@map("inter_webhook_logs")
+}
+
+// Conta do Customer (saldo interno OTSEM)
+model Account {
+  id         String   @id @default(uuid())
+  customerId String   @unique
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  // Saldo
+  balance Decimal @default(0) @db.Decimal(15, 2)
+
+  // Chave Pix única do customer
+  pixKey     String? @unique // ← Adicionar (nullable inicialmente)
+  pixKeyType String? @default("RANDOM") // ← Adicionar
+
+  // Limites
+  dailyLimit   Decimal @default(5000) @db.Decimal(15, 2)
+  monthlyLimit Decimal @default(20000) @db.Decimal(15, 2)
+
+  // Status
+  status        String  @default("active")
+  blockedAmount Decimal @default(0) @db.Decimal(15, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@map("accounts")
+}
+
+// Transações (depósitos, saques, transferências)
+model Transaction {
+  id        String  @id @default(uuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  // Tipo
+  type String // DEPOSIT, WITHDRAW, TRANSFER_IN, TRANSFER_OUT, PIX_IN, PIX_OUT
+
+  // Valores
+  amount        Decimal @db.Decimal(15, 2)
+  balanceBefore Decimal @db.Decimal(15, 2)
+  balanceAfter  Decimal @db.Decimal(15, 2)
+
+  // Status
+  status String // PENDING, PROCESSING, COMPLETED, FAILED, REVERSED
+
+  // Metadados
+  description String?
+  metadata    Json? // Dados extras (pagador, E2E ID, etc)
+
+  // Integração externa (Inter)
+  externalId   String? @unique // TxID do Inter, E2E ID
+  externalData Json?
+
+  // Contrapartida (para transferências entre customers)
+  relatedTxId   String?      @unique
+  relatedTx     Transaction? @relation("RelatedTransactions", fields: [relatedTxId], references: [id])
+  counterpartTx Transaction? @relation("RelatedTransactions")
+
+  // Datas
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  completedAt DateTime?
+  wallet      Wallet?   @relation(fields: [walletId], references: [id])
+  walletId    String?
+  payouts     Payout[]
+
+  @@index([accountId, createdAt])
+  @@index([type, status])
+  @@index([externalId])
+  @@map("transactions")
+}
+
+// Logs de Webhook (para auditoria)
+model WebhookLog {
+  id          String    @id @default(uuid())
+  source      String // INTER, BRX, etc
+  type        String // pix_received, pix_sent, etc
+  payload     Json
+  processed   Boolean   @default(false)
+  error       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([source, type, createdAt])
+  @@map("webhook_logs")
 }

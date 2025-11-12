@@ -15,6 +15,8 @@ import { BrxPixModule } from './brx/brx-pix.module';
 import { BrxWebhooksModule } from './brx-webhooks/brx-webhooks.module';
 import { MailModule } from './mail/mail.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
+import { InterModule } from './inter/inter.module';
+import { TransactionsModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
@@ -32,8 +34,10 @@ import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
     BrxWebhooksModule,
     MailModule,
     AdminDashboardModule,
+    InterModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

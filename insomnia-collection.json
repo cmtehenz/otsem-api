@@ -1,0 +1,434 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-11-12T12:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_otsem_api",
+      "_type": "workspace",
+      "name": "OTSEM API",
+      "description": "Banking System - Complete API",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:3333",
+        "admin_token": "",
+        "customer_token": "",
+        "customer_id": "",
+        "transaction_id": "",
+        "txid": "",
+        "pix_key": ""
+      },
+      "parentId": "wrk_otsem_api"
+    },
+    {
+      "_id": "env_local",
+      "_type": "environment",
+      "name": "Local",
+      "data": {
+        "base_url": "http://localhost:3333"
+      },
+      "parentId": "env_base"
+    },
+    {
+      "_id": "env_prod",
+      "_type": "environment",
+      "name": "Production",
+      "data": {
+        "base_url": "https://api.otsem.com"
+      },
+      "parentId": "env_base"
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "name": "🔐 Auth",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_auth_login",
+      "_type": "request",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "parentId": "fld_auth",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@otsem.com\",\n  \"password\": \"Admin@123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_auth_me",
+      "_type": "request",
+      "name": "Me (User Info)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/auth/me",
+      "parentId": "fld_auth",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_auth_forgot",
+      "_type": "request",
+      "name": "Forgot Password",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/forgot-password",
+      "parentId": "fld_auth",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"customer@example.com\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_auth_reset",
+      "_type": "request",
+      "name": "Reset Password",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/reset-password",
+      "parentId": "fld_auth",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"token\": \"reset_token_here\",\n  \"newPassword\": \"NewPass@123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "fld_customers",
+      "_type": "request_group",
+      "name": "👥 Customers",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_customers_create_person",
+      "_type": "request",
+      "name": "Create Customer (Person)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/customers/person",
+      "parentId": "fld_customers",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao@example.com\",\n  \"password\": \"Pass@123\",\n  \"cpf\": \"12345678901\",\n  \"birthDate\": \"1990-01-01\",\n  \"phone\": \"11999999999\",\n  \"address\": {\n    \"zipCode\": \"01310-100\",\n    \"street\": \"Av. Paulista\",\n    \"number\": \"1000\",\n    \"complement\": \"Apto 101\",\n    \"neighborhood\": \"Bela Vista\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  }\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_customers_create_company",
+      "_type": "request",
+      "name": "Create Customer (Company)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/customers/company",
+      "parentId": "fld_customers",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Tech LTDA\",\n  \"email\": \"tech@example.com\",\n  \"password\": \"Pass@123\",\n  \"cnpj\": \"12345678000190\",\n  \"tradeName\": \"Tech Store\",\n  \"phone\": \"11999999999\",\n  \"address\": {\n    \"zipCode\": \"01310-100\",\n    \"street\": \"Av. Paulista\",\n    \"number\": \"1000\",\n    \"neighborhood\": \"Bela Vista\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  }\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_customers_list",
+      "_type": "request",
+      "name": "List Customers (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/customers?page=1&limit=10",
+      "parentId": "fld_customers",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_customers_get",
+      "_type": "request",
+      "name": "Get Customer by ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/customers/{{ _.customer_id }}",
+      "parentId": "fld_customers",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_customers_approve",
+      "_type": "request",
+      "name": "Approve Customer (Admin)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/customers/{{ _.customer_id }}/approve",
+      "parentId": "fld_customers",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_customers_reject",
+      "_type": "request",
+      "name": "Reject Customer (Admin)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/customers/{{ _.customer_id }}/reject",
+      "parentId": "fld_customers",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"reason\": \"Documentação incompleta\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "fld_inter_tests",
+      "_type": "request_group",
+      "name": "🧪 Inter - Tests",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_inter_test_auth",
+      "_type": "request",
+      "name": "Test Auth",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/test/auth",
+      "parentId": "fld_inter_tests",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_test_saldo",
+      "_type": "request",
+      "name": "Test Saldo",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/test/saldo",
+      "parentId": "fld_inter_tests",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_test_extrato",
+      "_type": "request",
+      "name": "Test Extrato",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/test/extrato",
+      "parentId": "fld_inter_tests",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_test_pix_keys",
+      "_type": "request",
+      "name": "Test Pix Keys",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/test/pix/chaves",
+      "parentId": "fld_inter_tests",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_test_create_key",
+      "_type": "request",
+      "name": "Test Create Pix Key",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/test/pix/chave-teste",
+      "parentId": "fld_inter_tests",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_test_connection",
+      "_type": "request",
+      "name": "Test Full Connection",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/test/connection",
+      "parentId": "fld_inter_tests",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_test_health",
+      "_type": "request",
+      "name": "Health Check",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/test/health",
+      "parentId": "fld_inter_tests",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "fld_inter_pix_keys",
+      "_type": "request_group",
+      "name": "🔑 Inter - Pix Keys",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_pix_keys_random",
+      "_type": "request",
+      "name": "Register Random Pix Key",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/pix/keys/random",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_specific",
+      "_type": "request",
+      "name": "Register Specific Pix Key",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/pix/keys",
+      "parentId": "fld_inter_pix_keys",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"tipoChave\": \"CPF\",\n  \"chave\": \"12345678901\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_list",
+      "_type": "request",
+      "name": "List All Pix Keys (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/pix/keys",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_get",
+      "_type": "request",
+      "name": "Get Pix Key (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/pix/keys/{{ _.pix_key }}",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_delete",
+      "_type": "request",
+      "name": "Delete Pix Key (Admin)",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/inter/pix/keys/{{ _.pix_key }}",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_available",
+      "_type": "request",
+      "name": "Check Pix Key Availability",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/pix/keys/12345678901/available",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    }
+  ]
+}

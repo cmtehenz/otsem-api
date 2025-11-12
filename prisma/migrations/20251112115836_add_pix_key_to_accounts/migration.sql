@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "accounts" ALTER COLUMN "pixKey" DROP NOT NULL,
+ALTER COLUMN "pixKeyType" DROP NOT NULL;
