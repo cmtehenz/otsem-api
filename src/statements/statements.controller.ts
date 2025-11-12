@@ -5,57 +5,27 @@ import {
   Param,
   Query,
   UseGuards,
-  Req,
+  Request,
   ForbiddenException,
 } from '@nestjs/common';
-import { StatementsService } from './statements.service';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '@prisma/client';
-import { IsOptional, IsInt, Min, Max, IsDateString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { StatementsService } from './statements.service';
+import { StatementQueryDto } from './dto/statement-query.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { Request } from 'express';
 
-interface AuthRequest extends Request {
-  user?: {
-    sub: string;
-    email: string;
-    role?: Role;
-  };
-}
-
-class GetStatementDto {
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
-  @IsOptional()
-  @IsDateString()
-  startDate?: string;
-
-  @IsOptional()
-  @IsDateString()
-  endDate?: string;
-}
-
+@ApiTags('Statements')
+@ApiBearerAuth()
 @Controller('statements')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class StatementsController {
   constructor(
     private readonly service: StatementsService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   // Validar se o user tem acesso ao accountHolderId
   private async validateAccess(
@@ -80,7 +50,7 @@ export class StatementsController {
   @Get('account-holders/:accountHolderId/balance')
   @Roles(Role.ADMIN, Role.CUSTOMER)
   async getBalance(
-    @Req() req: AuthRequest,
+    @Request() req: any,
     @Param('accountHolderId') accountHolderId: string,
   ) {
     await this.validateAccess(accountHolderId, req.user);
@@ -91,9 +61,9 @@ export class StatementsController {
   @Get('account-holders/:accountHolderId')
   @Roles(Role.ADMIN, Role.CUSTOMER)
   async getStatement(
-    @Req() req: AuthRequest,
+    @Request() req: any,
     @Param('accountHolderId') accountHolderId: string,
-    @Query() query: GetStatementDto,
+    @Query() query: StatementQueryDto,
   ) {
     await this.validateAccess(accountHolderId, req.user);
     return this.service.getStatement(
@@ -104,4 +74,26 @@ export class StatementsController {
       query.endDate,
     );
   }
+
+  @Get()
+  @ApiOperation({ summary: 'Extrato do customer logado' })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'type', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  async myStatement(@Request() req: any, @Query() query: StatementQueryDto) {
+    const customerId = req.user.customerId;
+    return this.service.getCustomerStatement(customerId, query);
+  }
+
+  @Get('admin/:customerId')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Extrato por customerId (Admin)' })
+  @ApiParam({ name: 'customerId' })
+  async byCustomerAdmin(@Param('customerId') customerId: string, @Query() query: StatementQueryDto) {
+    return this.service.getStatementByCustomerIdAdmin(customerId, query);
+  }
 }
+
+
