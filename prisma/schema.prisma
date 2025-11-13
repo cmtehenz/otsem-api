@@ -307,9 +307,8 @@ model Deposit {
 
   status       DepositStatus @default(PENDING)
   errorMessage String?       @db.Text
-
-  bankPayload Json
-  externalId  String? @unique
+  bankPayload  Json
+  externalId   String?       @unique
 
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)

@@ -5,5 +5,5 @@
 
 */
 -- AlterTable
-ALTER TABLE "Customer" DROP COLUMN "rgi",
+-- ALTER TABLE "Customer" DROP COLUMN "rgi",
 ADD COLUMN     "rg" TEXT;
