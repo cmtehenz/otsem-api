@@ -11,8 +11,12 @@ import { InterTokenResponse } from '../types/inter.types';
 export class InterAuthService {
     private readonly logger = new Logger(InterAuthService.name);
 
-    private readonly INTER_API_URL = process.env.INTER_API_URL ||
-        'https://cdpj-sandbox.partners.uatinter.co';
+    // Produção: https://cdpj.partners.bancointer.com.br | Sandbox: https://cdpj-sandbox.partners.uatinter.co
+    private readonly INTER_API_URL =
+        process.env.INTER_API_URL ||
+        (process.env.NODE_ENV === 'production'
+            ? 'https://cdpj.partners.bancointer.com.br'
+            : 'https://cdpj-sandbox.partners.uatinter.co');
 
     private readonly CLIENT_ID = process.env.INTER_CLIENT_ID;
     private readonly CLIENT_SECRET = process.env.INTER_CLIENT_SECRET;
@@ -41,70 +45,80 @@ export class InterAuthService {
         if (envCert && envKey && fs.existsSync(envCert) && fs.existsSync(envKey)) {
             this.CERT_PATH = envCert;
             this.KEY_PATH = envKey;
-            this.logger.log(`✅ Certificados (ENV) em: ${path.dirname(envCert)}`);
+            this.logger.log(`✅ Certificados (ENV): ${path.dirname(envCert)}`);
             return;
         }
 
         // 1) Produção (mesmo nível de dist) → /var/www/otsem-api/inter-keys
-        const possiblePaths = [
-            {
-                cert: path.join(process.cwd(), 'inter-keys/certificado.crt'),
-                key: path.join(process.cwd(), 'inter-keys/chave_privada.key'),
-            },
-            // 2) Produção (copiados no build)
-            {
-                cert: path.join(process.cwd(), 'dist/src/inter-keys/certificado.crt'),
-                key: path.join(process.cwd(), 'dist/src/inter-keys/chave_privada.key'),
-            },
-            {
-                cert: path.join(process.cwd(), 'dist/inter-keys/certificado.crt'),
-                key: path.join(process.cwd(), 'dist/inter-keys/chave_privada.key'),
-            },
-            // 3) Desenvolvimento (src)
-            {
-                cert: path.join(process.cwd(), 'src/inter-keys/certificado.crt'),
-                key: path.join(process.cwd(), 'src/inter-keys/chave_privada.key'),
-            },
-            // 4) Relativo ao arquivo compilado em dist/
-            {
-                cert: path.join(__dirname, '../../inter-keys/certificado.crt'),
-                key: path.join(__dirname, '../../inter-keys/chave_privada.key'),
-            },
+        const possible = [
+            { cert: path.join(process.cwd(), 'inter-keys/certificado.crt'), key: path.join(process.cwd(), 'inter-keys/chave_privada.key') },
+            { cert: path.join(process.cwd(), 'dist/src/inter-keys/certificado.crt'), key: path.join(process.cwd(), 'dist/src/inter-keys/chave_privada.key') },
+            { cert: path.join(process.cwd(), 'dist/inter-keys/certificado.crt'), key: path.join(process.cwd(), 'dist/inter-keys/chave_privada.key') },
+            { cert: path.join(process.cwd(), 'src/inter-keys/certificado.crt'), key: path.join(process.cwd(), 'src/inter-keys/chave_privada.key') },
+            { cert: path.join(__dirname, '../../inter-keys/certificado.crt'), key: path.join(__dirname, '../../inter-keys/chave_privada.key') },
         ];
 
-        for (const p of possiblePaths) {
+        for (const p of possible) {
             if (fs.existsSync(p.cert) && fs.existsSync(p.key)) {
                 this.CERT_PATH = p.cert;
                 this.KEY_PATH = p.key;
-                this.logger.log(`✅ Certificados encontrados em: ${path.dirname(p.cert)}`);
-                this.logger.debug(`cwd: ${process.cwd()} | __dirname: ${__dirname}`);
+                this.logger.log(`✅ Certificados: ${path.dirname(p.cert)}`);
                 return;
             }
         }
 
-        this.logger.error('❌ Certificados não encontrados. Tentativas:');
-        this.logger.error(`cwd: ${process.cwd()} | __dirname: ${__dirname}`);
-        possiblePaths.forEach((p, i) => {
-            const certExists = fs.existsSync(p.cert) ? '✓' : '✗';
-            const keyExists = fs.existsSync(p.key) ? '✓' : '✗';
-            this.logger.error(`  ${i + 1}. ${certExists} Cert: ${p.cert}`);
-            this.logger.error(`     ${keyExists} Key:  ${p.key}`);
-        });
-
+        this.logger.error('❌ Certificados não encontrados.');
         throw new Error('Certificados do Banco Inter não encontrados');
     }
 
     private initializeHttpsAgent() {
         try {
+            // PFX opcional
+            const pfxPath = process.env.INTER_CERT_PFX_PATH;
+            const pfxPass = process.env.INTER_CERT_PFX_PASS;
+            if (pfxPath && fs.existsSync(pfxPath)) {
+                this.logger.log(`✅ Usando PFX: ${pfxPath}`);
+                this.httpsAgent = new https.Agent({
+                    pfx: fs.readFileSync(pfxPath),
+                    passphrase: pfxPass || '',
+                    rejectUnauthorized: true,
+                });
+                return;
+            }
+
+            let certContent = fs.readFileSync(this.CERT_PATH, 'utf8');
+            const keyContent = fs.readFileSync(this.KEY_PATH, 'utf8');
+
+            // CA externo opcional
+            const caPath = process.env.INTER_CA_PATH;
+            let ca: string[] | undefined;
+            if (caPath && fs.existsSync(caPath)) {
+                ca = [fs.readFileSync(caPath, 'utf8')];
+                this.logger.log(`🔗 CA externo carregado`);
+            } else {
+                // Extrair cadeia do próprio .crt (multi-cert)
+                const blocks = certContent
+                    .split(/-----END CERTIFICATE-----/g)
+                    .filter(b => b.includes('BEGIN CERTIFICATE'))
+                    .map(b => b + '-----END CERTIFICATE-----')
+                    .map(b => b.trim());
+                if (blocks.length > 1) {
+                    certContent = blocks[0];
+                    ca = blocks.slice(1);
+                    this.logger.log(`🔗 Cadeia detectada (${ca.length} intermediários)`);
+                }
+            }
+
             this.httpsAgent = new https.Agent({
-                cert: fs.readFileSync(this.CERT_PATH),
-                key: fs.readFileSync(this.KEY_PATH),
+                cert: certContent,
+                key: keyContent,
+                ca,
                 rejectUnauthorized: true,
             });
 
-            this.logger.log('✅ Certificados carregados com sucesso');
-        } catch (error) {
-            this.logger.error('❌ Erro ao carregar certificados:', error.message);
+            this.logger.log('✅ Certificados (PEM) carregados');
+        } catch (e: any) {
+            this.logger.error('❌ Erro certificados:', e.message);
             throw new Error('Falha ao carregar certificados do Banco Inter');
         }
     }
@@ -134,16 +148,10 @@ export class InterAuthService {
 
     async getToken(): Promise<string> {
         // Verificar se token ainda é válido (com margem de 5 minutos)
-        if (
-            this.accessToken &&
-            this.tokenExpiry &&
-            new Date() < new Date(this.tokenExpiry.getTime() - 5 * 60 * 1000)
-        ) {
+        if (this.accessToken && this.tokenExpiry && new Date() < new Date(this.tokenExpiry.getTime() - 5 * 60 * 1000)) {
             return this.accessToken;
         }
-
-        this.logger.log('🔐 Obtendo novo token OAuth 2.0...');
-
+        this.logger.log('🔐 Novo token OAuth 2.0');
         try {
             const response = await axios.post<InterTokenResponse>(
                 `${this.INTER_API_URL}/oauth/v2/token`,
@@ -155,34 +163,19 @@ export class InterAuthService {
                 }),
                 {
                     httpsAgent: this.httpsAgent,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 }
             );
-
             this.accessToken = response.data.access_token;
-            this.tokenExpiry = new Date(
-                Date.now() + response.data.expires_in * 1000
-            );
-
-            this.logger.log('✅ Token obtido com sucesso');
-            this.logger.debug(
-                `⏱️  Token expira em: ${response.data.expires_in} segundos`
-            );
-
+            this.tokenExpiry = new Date(Date.now() + response.data.expires_in * 1000);
+            this.logger.log('✅ Token obtido');
             return this.accessToken;
-        } catch (error) {
-            this.logger.error('❌ Erro ao obter token:', error.response?.data || error.message);
+        } catch (error: any) {
+            this.logger.error('❌ Erro token:', error?.message);
             throw new Error('Falha na autenticação com Banco Inter');
         }
     }
 
-    getAxiosInstance(): AxiosInstance {
-        return this.axiosInstance;
-    }
-
-    getHttpsAgent(): https.Agent {
-        return this.httpsAgent;
-    }
+    getAxiosInstance() { return this.axiosInstance; }
+    getHttpsAgent() { return this.httpsAgent; }
 }
