@@ -32,46 +32,58 @@ export class InterAuthService {
     }
 
     /**
-     * Resolve caminhos dos certificados (dev vs produção)
+     * Resolve caminhos dos certificados (prod e dev)
      */
     private resolveCertPaths() {
+        // 0) Variáveis de ambiente (prioridade máxima)
+        const envCert = process.env.INTER_CERT_PATH;
+        const envKey = process.env.INTER_KEY_PATH;
+        if (envCert && envKey && fs.existsSync(envCert) && fs.existsSync(envKey)) {
+            this.CERT_PATH = envCert;
+            this.KEY_PATH = envKey;
+            this.logger.log(`✅ Certificados (ENV) em: ${path.dirname(envCert)}`);
+            return;
+        }
+
+        // 1) Produção (mesmo nível de dist) → /var/www/otsem-api/inter-keys
         const possiblePaths = [
-            // 1. Produção (dist compilado) - PRIORIDADE
+            {
+                cert: path.join(process.cwd(), 'inter-keys/certificado.crt'),
+                key: path.join(process.cwd(), 'inter-keys/chave_privada.key'),
+            },
+            // 2) Produção (copiados no build)
             {
                 cert: path.join(process.cwd(), 'dist/src/inter-keys/certificado.crt'),
                 key: path.join(process.cwd(), 'dist/src/inter-keys/chave_privada.key'),
             },
-            // 2. Produção alternativa (dist raiz)
             {
                 cert: path.join(process.cwd(), 'dist/inter-keys/certificado.crt'),
                 key: path.join(process.cwd(), 'dist/inter-keys/chave_privada.key'),
             },
-            // 3. Desenvolvimento (src)
+            // 3) Desenvolvimento (src)
             {
                 cert: path.join(process.cwd(), 'src/inter-keys/certificado.crt'),
                 key: path.join(process.cwd(), 'src/inter-keys/chave_privada.key'),
             },
-            // 4. Desenvolvimento (__dirname relativo)
+            // 4) Relativo ao arquivo compilado em dist/
             {
                 cert: path.join(__dirname, '../../inter-keys/certificado.crt'),
                 key: path.join(__dirname, '../../inter-keys/chave_privada.key'),
             },
         ];
 
-        // Tentar cada caminho possível
-        for (const paths of possiblePaths) {
-            if (fs.existsSync(paths.cert) && fs.existsSync(paths.key)) {
-                this.CERT_PATH = paths.cert;
-                this.KEY_PATH = paths.key;
-                this.logger.log(`✅ Certificados encontrados em: ${path.dirname(paths.cert)}`);
-                this.logger.debug(`📄 Certificado: ${this.CERT_PATH}`);
-                this.logger.debug(`🔑 Chave: ${this.KEY_PATH}`);
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p.cert) && fs.existsSync(p.key)) {
+                this.CERT_PATH = p.cert;
+                this.KEY_PATH = p.key;
+                this.logger.log(`✅ Certificados encontrados em: ${path.dirname(p.cert)}`);
+                this.logger.debug(`cwd: ${process.cwd()} | __dirname: ${__dirname}`);
                 return;
             }
         }
 
-        // Se não encontrou em nenhum lugar, listar tentativas
         this.logger.error('❌ Certificados não encontrados. Tentativas:');
+        this.logger.error(`cwd: ${process.cwd()} | __dirname: ${__dirname}`);
         possiblePaths.forEach((p, i) => {
             const certExists = fs.existsSync(p.cert) ? '✓' : '✗';
             const keyExists = fs.existsSync(p.key) ? '✓' : '✗';
