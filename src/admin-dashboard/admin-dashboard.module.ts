@@ -1,11 +1,16 @@
 import { Module } from '@nestjs/common';
+import { PrismaModule } from '../prisma/prisma.module';
+import { InterModule } from '../inter/inter.module';
 import { AdminDashboardController } from './admin-dashboard.controller';
 import { AdminDashboardService } from './admin-dashboard.service';
-import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    PrismaModule,
+    InterModule, // Importing InterModule to use InterBankingService
+  ],
   controllers: [AdminDashboardController],
   providers: [AdminDashboardService],
+  exports: [AdminDashboardService],
 })
-export class AdminDashboardModule {}
+export class AdminDashboardModule { }

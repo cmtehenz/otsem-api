@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2025-11-12T12:00:00.000Z",
+  "__export_date": "2025-11-12T15:00:00.000Z",
   "__export_source": "insomnia.desktop.app:v2023.5.8",
   "resources": [
     {
@@ -22,7 +22,8 @@
         "customer_id": "",
         "transaction_id": "",
         "txid": "",
-        "pix_key": ""
+        "pix_key": "",
+        "account_holder_id": ""
       },
       "parentId": "wrk_otsem_api"
     },
@@ -227,6 +228,443 @@
       ]
     },
     {
+      "_id": "fld_accounts",
+      "_type": "request_group",
+      "name": "🏦 Accounts",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_accounts_balance",
+      "_type": "request",
+      "name": "Get My Balance",
+      "method": "GET",
+      "url": "{{ _.base_url }}/accounts/balance",
+      "parentId": "fld_accounts",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_accounts_update_pix_key",
+      "_type": "request",
+      "name": "Update Pix Key (Admin)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/accounts/{{ _.customer_id }}/pix-key",
+      "parentId": "fld_accounts",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pixKey\": \"4d7e8f2a-3b1c-4e5f-9a0b-1c2d3e4f5a6b\",\n  \"pixKeyType\": \"RANDOM\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_accounts_get_by_pix_key",
+      "_type": "request",
+      "name": "Get Account by Pix Key (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/accounts/pix-key/{{ _.pix_key }}",
+      "parentId": "fld_accounts",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "fld_statements",
+      "_type": "request_group",
+      "name": "📊 Statements",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_statements_my",
+      "_type": "request",
+      "name": "My Statement",
+      "method": "GET",
+      "url": "{{ _.base_url }}/statements?from=2025-11-01T00:00:00Z&to=2025-11-12T23:59:59Z&limit=200",
+      "parentId": "fld_statements",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_statements_admin_by_customer",
+      "_type": "request",
+      "name": "Statement by Customer (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/statements/admin/{{ _.customer_id }}?from=2025-11-01T00:00:00Z&to=2025-11-12T23:59:59Z&limit=200",
+      "parentId": "fld_statements",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_statements_balance_by_holder",
+      "_type": "request",
+      "name": "Balance by Account Holder (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/statements/account-holders/{{ _.account_holder_id }}/balance",
+      "parentId": "fld_statements",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_statements_by_holder",
+      "_type": "request",
+      "name": "Statement by Account Holder (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/statements/account-holders/{{ _.account_holder_id }}?page=1&limit=50&startDate=2025-11-01&endDate=2025-11-12",
+      "parentId": "fld_statements",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "fld_transactions",
+      "_type": "request_group",
+      "name": "💸 Transactions",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_transactions_list",
+      "_type": "request",
+      "name": "List My Transactions",
+      "method": "GET",
+      "url": "{{ _.base_url }}/transactions?page=1&limit=50",
+      "parentId": "fld_transactions",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_transactions_get",
+      "_type": "request",
+      "name": "Get Transaction by ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/transactions/{{ _.transaction_id }}",
+      "parentId": "fld_transactions",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_transactions_reverse",
+      "_type": "request",
+      "name": "Reverse Transaction (Admin)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/transactions/{{ _.transaction_id }}/reverse",
+      "parentId": "fld_transactions",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"reason\": \"Estorno solicitado pelo cliente\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "fld_inter_banking",
+      "_type": "request_group",
+      "name": "🏦 Inter - Banking",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_inter_banking_saldo",
+      "_type": "request",
+      "name": "Get Saldo (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/banking/saldo",
+      "parentId": "fld_inter_banking",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_banking_extrato",
+      "_type": "request",
+      "name": "Get Extrato (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/banking/extrato?dataInicio=2025-11-01&dataFim=2025-11-12",
+      "parentId": "fld_inter_banking",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "fld_inter_pix",
+      "_type": "request_group",
+      "name": "💰 Inter - Pix",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_inter_pix_create_charge",
+      "_type": "request",
+      "name": "Create Pix Charge",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/pix/cobranca",
+      "parentId": "fld_inter_pix",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"valor\": 100.00,\n  \"expiracao\": 86400,\n  \"descricao\": \"Pagamento de teste\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_pix_get_charge",
+      "_type": "request",
+      "name": "Get Pix Charge",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/pix/cobranca/{{ _.txid }}",
+      "parentId": "fld_inter_pix",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_pix_send",
+      "_type": "request",
+      "name": "Send Pix",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/pix/enviar",
+      "parentId": "fld_inter_pix",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"chave\": \"12345678901\",\n  \"valor\": 50.00,\n  \"descricao\": \"Transferência teste\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "fld_inter_pix_keys",
+      "_type": "request_group",
+      "name": "🔑 Inter - Pix Keys",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_pix_keys_random",
+      "_type": "request",
+      "name": "Register Random Pix Key",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/pix/keys/random",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_specific",
+      "_type": "request",
+      "name": "Register Specific Pix Key",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/pix/keys",
+      "parentId": "fld_inter_pix_keys",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"tipoChave\": \"CPF\",\n  \"chave\": \"12345678901\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_list",
+      "_type": "request",
+      "name": "List All Pix Keys (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/pix/keys",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_get",
+      "_type": "request",
+      "name": "Get Pix Key (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/pix/keys/{{ _.pix_key }}",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_delete",
+      "_type": "request",
+      "name": "Delete Pix Key (Admin)",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/inter/pix/keys/{{ _.pix_key }}",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_pix_keys_available",
+      "_type": "request",
+      "name": "Check Pix Key Availability",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/pix/keys/12345678901/available",
+      "parentId": "fld_inter_pix_keys",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.customer_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "fld_inter_webhooks",
+      "_type": "request_group",
+      "name": "🔔 Inter - Webhooks",
+      "parentId": "wrk_otsem_api",
+      "environment": {}
+    },
+    {
+      "_id": "req_inter_webhooks_list",
+      "_type": "request",
+      "name": "List Webhooks (Admin)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/inter/webhooks",
+      "parentId": "fld_inter_webhooks",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_webhooks_create_pix",
+      "_type": "request",
+      "name": "Create Webhook Pix (Admin)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/webhooks/pix",
+      "parentId": "fld_inter_webhooks",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"webhookUrl\": \"https://otsem-api.com/inter/webhooks/pix\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_inter_webhooks_receive_pix",
+      "_type": "request",
+      "name": "Receive Pix Webhook (Test)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/inter/webhooks/pix",
+      "parentId": "fld_inter_webhooks",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pix\": [\n    {\n      \"endToEndId\": \"E12345678202511121430000000000AB\",\n      \"txid\": \"txid123\",\n      \"chave\": \"4d7e8f2a-3b1c-4e5f-9a0b-1c2d3e4f5a6b\",\n      \"valor\": \"100.00\",\n      \"horario\": \"2025-11-12T14:30:00Z\",\n      \"infoPagador\": \"Depósito teste\",\n      \"pagador\": {\n        \"cpf\": \"12345678901\",\n        \"nome\": \"João Silva\"\n      }\n    }\n  ]\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
       "_id": "fld_inter_tests",
       "_type": "request_group",
       "name": "🧪 Inter - Tests",
@@ -332,101 +770,23 @@
       ]
     },
     {
-      "_id": "fld_inter_pix_keys",
+      "_id": "fld_admin",
       "_type": "request_group",
-      "name": "🔑 Inter - Pix Keys",
+      "name": "👨‍💼 Admin Dashboard",
       "parentId": "wrk_otsem_api",
       "environment": {}
     },
     {
-      "_id": "req_pix_keys_random",
+      "_id": "req_admin_dashboard_stats",
       "_type": "request",
-      "name": "Register Random Pix Key",
-      "method": "POST",
-      "url": "{{ _.base_url }}/inter/pix/keys/random",
-      "parentId": "fld_inter_pix_keys",
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.customer_token }}"
-        }
-      ]
-    },
-    {
-      "_id": "req_pix_keys_specific",
-      "_type": "request",
-      "name": "Register Specific Pix Key",
-      "method": "POST",
-      "url": "{{ _.base_url }}/inter/pix/keys",
-      "parentId": "fld_inter_pix_keys",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"tipoChave\": \"CPF\",\n  \"chave\": \"12345678901\"\n}"
-      },
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.customer_token }}"
-        },
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ]
-    },
-    {
-      "_id": "req_pix_keys_list",
-      "_type": "request",
-      "name": "List All Pix Keys (Admin)",
+      "name": "Get Dashboard Stats",
       "method": "GET",
-      "url": "{{ _.base_url }}/inter/pix/keys",
-      "parentId": "fld_inter_pix_keys",
+      "url": "{{ _.base_url }}/admin/dashboard/stats",
+      "parentId": "fld_admin",
       "headers": [
         {
           "name": "Authorization",
           "value": "Bearer {{ _.admin_token }}"
-        }
-      ]
-    },
-    {
-      "_id": "req_pix_keys_get",
-      "_type": "request",
-      "name": "Get Pix Key (Admin)",
-      "method": "GET",
-      "url": "{{ _.base_url }}/inter/pix/keys/{{ _.pix_key }}",
-      "parentId": "fld_inter_pix_keys",
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.admin_token }}"
-        }
-      ]
-    },
-    {
-      "_id": "req_pix_keys_delete",
-      "_type": "request",
-      "name": "Delete Pix Key (Admin)",
-      "method": "DELETE",
-      "url": "{{ _.base_url }}/inter/pix/keys/{{ _.pix_key }}",
-      "parentId": "fld_inter_pix_keys",
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.admin_token }}"
-        }
-      ]
-    },
-    {
-      "_id": "req_pix_keys_available",
-      "_type": "request",
-      "name": "Check Pix Key Availability",
-      "method": "GET",
-      "url": "{{ _.base_url }}/inter/pix/keys/12345678901/available",
-      "parentId": "fld_inter_pix_keys",
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.customer_token }}"
         }
       ]
     }

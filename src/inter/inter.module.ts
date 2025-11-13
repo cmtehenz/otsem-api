@@ -4,6 +4,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module';
 import { TransactionsModule } from '../transactions/transactions.module';
+import { BrxAuthModule } from '../brx/brx-auth.module';
 
 // Services
 import { InterAuthService } from './services/inter-auth.service';
@@ -24,13 +25,14 @@ import { InterTestController } from './controllers/inter-test.controller'; // ‚Ü
         ConfigModule,
         PrismaModule,
         forwardRef(() => TransactionsModule),
+        BrxAuthModule,
     ],
     controllers: [
+        InterTestController,
         InterBankingController,
         InterPixController,
         InterPixKeysController,
         InterWebhookController,
-        InterTestController, // ‚Üê Adicionar
     ],
     providers: [
         InterAuthService,
@@ -41,7 +43,7 @@ import { InterTestController } from './controllers/inter-test.controller'; // ‚Ü
     ],
     exports: [
         InterAuthService,
-        InterBankingService,
+        InterBankingService, // ‚Üê Exportar para uso em outros m√≥dulos
         InterPixService,
         InterPixKeysService,
         InterWebhookService,

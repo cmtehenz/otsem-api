@@ -17,14 +17,14 @@ export class InterAuthService {
     private readonly CLIENT_ID = process.env.INTER_CLIENT_ID;
     private readonly CLIENT_SECRET = process.env.INTER_CLIENT_SECRET;
 
-    // ✅ Corrigir caminho dos certificados
+    // ✅ Caminho atualizado para /src/inter-keys
     private readonly CERT_PATH = path.join(
-        process.cwd(), // Raiz do projeto
-        'src/inter/inter-keys/certificado.crt'
+        process.cwd(),
+        'src/inter-keys/certificado.crt'
     );
     private readonly KEY_PATH = path.join(
-        process.cwd(), // Raiz do projeto
-        'src/inter/inter-keys/chave_privada.key'
+        process.cwd(),
+        'src/inter-keys/chave_privada.key'
     );
 
     private accessToken: string | null = null;
@@ -41,11 +41,11 @@ export class InterAuthService {
         try {
             // ✅ Verificar se certificados existem
             if (!fs.existsSync(this.CERT_PATH)) {
-                throw new Error(`Certificado não encontrado: ${this.CERT_PATH}`);
+                throw new Error(`❌ Certificado não encontrado: ${this.CERT_PATH}`);
             }
 
             if (!fs.existsSync(this.KEY_PATH)) {
-                throw new Error(`Chave privada não encontrada: ${this.KEY_PATH}`);
+                throw new Error(`❌ Chave privada não encontrada: ${this.KEY_PATH}`);
             }
 
             this.httpsAgent = new https.Agent({
@@ -55,8 +55,8 @@ export class InterAuthService {
             });
 
             this.logger.log('✅ Certificados carregados com sucesso');
-            this.logger.debug(`Certificado: ${this.CERT_PATH}`);
-            this.logger.debug(`Chave: ${this.KEY_PATH}`);
+            this.logger.debug(`📄 Certificado: ${this.CERT_PATH}`);
+            this.logger.debug(`🔑 Chave: ${this.KEY_PATH}`);
         } catch (error) {
             this.logger.error('❌ Erro ao carregar certificados:', error.message);
             throw new Error('Certificados do Banco Inter não encontrados');
@@ -122,7 +122,7 @@ export class InterAuthService {
 
             this.logger.log('✅ Token obtido com sucesso');
             this.logger.debug(
-                `Token expira em: ${response.data.expires_in} segundos`
+                `⏱️  Token expira em: ${response.data.expires_in} segundos`
             );
 
             return this.accessToken;

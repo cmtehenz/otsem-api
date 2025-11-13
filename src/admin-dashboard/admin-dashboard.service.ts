@@ -1,218 +1,169 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { InterBankingService } from '../inter/services/inter-banking.service';
+import { AccountStatus } from '@prisma/client';
 
 @Injectable()
 export class AdminDashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(AdminDashboardService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly interBankingService: InterBankingService,
+  ) { }
 
   async getSummary() {
-    const now = new Date();
-    const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
     const [
-      totalUsers,
-      activeToday,
-      deposits24h,
-      payments24h,
-      pixKeysActive,
-      cardTxs24h,
-      chargebacksOpen,
+      totalCustomers,
+      pendingCustomers,
+      approvedCustomers,
+      rejectedCustomers,
+      totalTransactions,
+      totalVolume,
     ] = await Promise.all([
-      // Total de usuários ativos
-      this.prisma.user.count({ where: { isActive: true } }),
+      // Total de customers
+      this.prisma.customer.count(),
 
-      // Usuários que atualizaram hoje
-      this.prisma.user.count({
-        where: { updatedAt: { gte: startOfDay } },
+      // Customers pendentes (accountStatus = requested)
+      this.prisma.customer.count({
+        where: { accountStatus: AccountStatus.requested }
       }),
 
-      // Depósitos últimas 24h (soma em centavos)
-      this.prisma.deposit.aggregate({
-        where: { createdAt: { gte: since24h } },
-        _sum: { receiptValue: true },
+      // Customers aprovados (accountStatus = approved)
+      this.prisma.customer.count({
+        where: { accountStatus: AccountStatus.approved }
       }),
 
-      // Pagamentos últimas 24h (soma em centavos)
-      this.prisma.payment.aggregate({
-        where: { createdAt: { gte: since24h } },
-        _sum: { paymentValue: true },
+      // Customers rejeitados (accountStatus = rejected)
+      this.prisma.customer.count({
+        where: { accountStatus: AccountStatus.rejected }
       }),
 
-      // Chaves PIX ativas
-      this.prisma.pixKey.count({
-        where: { status: 'ACTIVE' },
-      }),
+      // Total de transações
+      this.prisma.transaction.count(),
 
-      // Transações de cartão últimas 24h
-      this.prisma.cardTransaction.count({
-        where: {
-          createdAt: { gte: since24h },
-          status: { in: ['AUTHORIZED', 'CAPTURED'] },
-        },
-      }),
-
-      // Chargebacks em aberto
-      this.prisma.chargeback.count({
-        where: { status: { in: ['OPENED', 'UNDER_ANALYSIS'] } },
+      // Volume total transacionado
+      this.prisma.transaction.aggregate({
+        _sum: { amount: true },
       }),
     ]);
 
-    // Volume BRL (centavos -> reais)
-    const volumeCentavos =
-      (deposits24h._sum.receiptValue ?? 0) +
-      (payments24h._sum.paymentValue ?? 0);
-
     return {
-      totalUsers,
-      activeToday,
-      volumeBRL: volumeCentavos / 100,
-      pixKeys: pixKeysActive,
-      cardTxs: cardTxs24h,
-      chargebacks: chargebacksOpen,
+      customers: {
+        total: totalCustomers,
+        pending: pendingCustomers,
+        approved: approvedCustomers,
+        rejected: rejectedCustomers,
+      },
+      transactions: {
+        total: totalTransactions,
+        volume: Number(totalVolume._sum.amount || 0),
+      },
     };
   }
 
-  async getLatestUsers(limit = 10) {
-    const users = await this.prisma.user.findMany({
+  async getLatestUsers() {
+    const users = await this.prisma.customer.findMany({
+      take: 10,
       orderBy: { createdAt: 'desc' },
-      take: limit,
       select: {
         id: true,
         name: true,
         email: true,
+        accountStatus: true, // ← Campo correto
         createdAt: true,
-        role: true,
       },
     });
 
-    return users.map((u) => ({
-      id: u.id,
-      name: u.name ?? '(sem nome)',
-      email: u.email,
-      role: u.role,
-      createdAt: u.createdAt.toISOString().split('T')[0],
+    return users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      status: user.accountStatus, // ← Mapear para 'status' no response
+      createdAt: user.createdAt,
     }));
   }
 
-  async getLatestTransactions(limit = 15) {
-    // Coleta depósitos, pagamentos, payouts e transações de cartão
-    const [deposits, payments, payouts, cardTxs] = await Promise.all([
-      this.prisma.deposit.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        select: {
-          id: true,
-          createdAt: true,
-          receiptValue: true,
-          endToEnd: true,
-          payerName: true,
+  async getLatestTransactions() {
+    const transactions = await this.prisma.transaction.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        account: {
+          include: {
+            customer: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
         },
-      }),
+      },
+    });
 
-      this.prisma.payment.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        select: {
-          id: true,
-          createdAt: true,
-          paymentValue: true,
-          endToEnd: true,
-          receiverName: true,
-        },
-      }),
+    return transactions.map((t) => ({
+      id: t.id,
+      type: t.type,
+      status: t.status,
+      amount: Number(t.amount),
+      description: t.description,
+      createdAt: t.createdAt,
+      customer: {
+        id: t.account.customer.id,
+        name: t.account.customer.name,
+      },
+    }));
+  }
 
-      this.prisma.payout.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        select: {
-          id: true,
-          createdAt: true,
-          amount: true,
-          endToEndId: true,
-          status: true,
-          beneficiaryName: true,
-        },
-      }),
+  /**
+   * Obter saldos detalhados da conta Inter
+   */
+  async getInterBalance() {
+    try {
+      const saldo = await this.interBankingService.getSaldo();
 
-      this.prisma.cardTransaction.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        select: {
-          id: true,
-          createdAt: true,
-          amount: true,
-          status: true,
-          merchantName: true,
-          cardBrand: true,
-          cardLast4: true,
-        },
-      }),
+      return {
+        disponivel: Number(saldo.disponivel || 0),
+        bloqueadoCheque: Number(saldo.bloqueadoCheque || 0),
+        bloqueadoJudicialmente: Number(saldo.bloqueadoJudicialmente || 0),
+        bloqueadoAdministrativo: Number(saldo.bloqueadoAdministrativo || 0),
+        limite: Number(saldo.limite || 0),
+        total: Number(saldo.disponivel || 0) +
+          Number(saldo.bloqueadoCheque || 0) +
+          Number(saldo.bloqueadoJudicialmente || 0) +
+          Number(saldo.bloqueadoAdministrativo || 0),
+      };
+    } catch (error) {
+      this.logger.error('❌ Erro ao buscar saldo Inter:', error.message);
+      return {
+        disponivel: 0,
+        bloqueadoCheque: 0,
+        bloqueadoJudicialmente: 0,
+        bloqueadoAdministrativo: 0,
+        limite: 0,
+        total: 0,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Dashboard completo com todos os dados
+   */
+  async getStats() {
+    const [summary, interBalance, latestUsers, latestTransactions] = await Promise.all([
+      this.getSummary(),
+      this.getInterBalance(),
+      this.getLatestUsers(),
+      this.getLatestTransactions(),
     ]);
 
-    const items = [
-      ...deposits.map((d) => ({
-        id: d.id,
-        type: 'PIX_IN',
-        asset: 'BRL',
-        amount: d.receiptValue / 100,
-        ref: d.endToEnd,
-        createdAt: d.createdAt,
-        desc: `Depósito Pix${d.payerName ? ` - ${d.payerName}` : ''}`,
-      })),
-
-      ...payments.map((p) => ({
-        id: p.id,
-        type: 'PIX_OUT',
-        asset: 'BRL',
-        amount: p.paymentValue / 100,
-        ref: p.endToEnd,
-        createdAt: p.createdAt,
-        desc: `Pagamento Pix${p.receiverName ? ` - ${p.receiverName}` : ''}`,
-      })),
-
-      ...payouts.map((o) => ({
-        id: o.id,
-        type: 'PAYOUT',
-        asset: 'BRL',
-        amount: Number(o.amount),
-        ref: o.endToEndId,
-        createdAt: o.createdAt,
-        desc: `Payout (${o.status})${o.beneficiaryName ? ` - ${o.beneficiaryName}` : ''}`,
-      })),
-
-      ...cardTxs.map((c) => ({
-        id: c.id,
-        type: 'CARD',
-        asset: 'BRL',
-        amount: c.amount / 100,
-        ref: `${c.cardBrand} *${c.cardLast4}`,
-        createdAt: c.createdAt,
-        desc: `${c.merchantName ?? 'Compra'} (${c.status})`,
-      })),
-    ]
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, limit);
-
-    return items.map((i) => ({
-      id: i.id,
-      when: this.relative(i.createdAt),
-      type: i.type,
-      asset: i.asset,
-      amount: i.amount,
-      desc: i.desc,
-    }));
-  }
-
-  private relative(date: Date): string {
-    const diffMs = Date.now() - date.getTime();
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return 'agora';
-    if (mins < 60) return `há ${mins} min`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `há ${hours} h`;
-    const days = Math.floor(hours / 24);
-    return `há ${days} d`;
+    return {
+      summary,
+      interBalance,
+      latestUsers,
+      latestTransactions,
+    };
   }
 }
