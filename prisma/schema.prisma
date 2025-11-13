@@ -163,7 +163,7 @@ model Customer {
   // PF
   cpf         String?   @unique
   birthday    DateTime?
-  rgi         String?
+  rg          String?
   mothersName String?
 
   // PJ
