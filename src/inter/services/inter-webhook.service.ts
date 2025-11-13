@@ -24,7 +24,33 @@ export class InterWebhookService {
         private readonly authService: InterAuthService,
         private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
-    ) { }
+    ) {
+        // ✅ Validar configurações obrigatórias
+        this.validateConfig();
+    }
+
+    /**
+     * 🔍 Validar configurações obrigatórias
+     */
+    private validateConfig() {
+        const required = {
+            INTER_PIX_KEY: this.configService.get<string>('INTER_PIX_KEY'),
+            INTER_CONTA_CORRENTE: this.configService.get<string>('INTER_CONTA_CORRENTE'),
+            INTER_CLIENT_ID: this.configService.get<string>('INTER_CLIENT_ID'),
+            INTER_CLIENT_SECRET: this.configService.get<string>('INTER_CLIENT_SECRET'),
+        };
+
+        const missing = Object.entries(required)
+            .filter(([_, value]) => !value)
+            .map(([key]) => key);
+
+        if (missing.length > 0) {
+            this.logger.error(`❌ Variáveis obrigatórias não configuradas: ${missing.join(', ')}`);
+            this.logger.error('Configure-as no arquivo .env antes de continuar.');
+        } else {
+            this.logger.log('✅ Todas as variáveis obrigatórias estão configuradas');
+        }
+    }
 
     // ==================== GERENCIAR CALLBACKS ====================
 
@@ -36,28 +62,64 @@ export class InterWebhookService {
 
         try {
             const axios = this.authService.getAxiosInstance();
-            const response = await axios.get(`/banking/v2/webhooks/${tipoWebhook}`);
 
-            this.logger.log(`✅ Callback encontrado: ${response.data.webhookUrl}`);
-            return response.data;
+            if (tipoWebhook === 'pix') {
+                const pixKey = this.configService.get<string>('INTER_PIX_KEY');
+                if (!pixKey) {
+                    throw new BadRequestException('INTER_PIX_KEY não configurada');
+                }
+
+                const contaCorrente = this.configService.get<string>(
+                    'INTER_CONTA_CORRENTE',
+                );
+
+                const response = await axios.get(
+                    `/pix/v2/webhook/${encodeURIComponent(pixKey)}`,
+                    {
+                        headers: {
+                            'x-conta-corrente': contaCorrente,
+                        },
+                    },
+                );
+
+                this.logger.log(`✅ Callback encontrado: ${response.data.webhookUrl}`);
+                return response.data;
+            }
+
+            if (tipoWebhook === 'boletos') {
+                const response = await axios.get(`/banking/v2/webhooks/boletos`);
+                this.logger.log(`✅ Callback encontrado: ${response.data.webhookUrl}`);
+                return response.data;
+            }
+
+            throw new BadRequestException('Tipo inválido');
         } catch (error: any) {
-            if (error.response?.status === 404) {
+            const status = error.response?.status;
+
+            // ✅ 404 é esperado quando não há webhook cadastrado
+            if (status === 404) {
                 this.logger.warn('⚠️ Nenhum callback cadastrado ainda');
                 return { webhookUrl: null, message: 'Nenhum callback cadastrado' };
             }
 
-            this.logger.error(
-                '❌ Erro ao consultar callbacks:',
-                error.response?.data,
-            );
-            throw new BadRequestException(
-                error.response?.data?.message || 'Erro ao consultar callbacks',
-            );
+            // ✅ Outros erros: logar detalhes
+            this.logger.error('❌ Erro ao consultar callbacks:');
+            this.logger.error(`   Status: ${status}`);
+            this.logger.error(`   Message: ${error.message}`);
+            this.logger.error(`   Data:`, JSON.stringify(error.response?.data, null, 2));
+            this.logger.error(`   URL: ${error.config?.baseURL}${error.config?.url}`);
+
+            // ✅ Não lançar exceção, retornar resposta vazia
+            return {
+                webhookUrl: null,
+                message: error.response?.data?.message || 'Erro ao consultar callbacks',
+                error: true,
+            };
         }
     }
 
     /**
-     * ➕ Criar callback (usa PUT na Inter)
+     * ➕ Criar callback de webhook Pix (usa PUT na Inter)
      */
     async createCallback(
         tipoWebhook: string,
@@ -68,19 +130,69 @@ export class InterWebhookService {
         try {
             const axios = this.authService.getAxiosInstance();
 
-            // ✅ A Inter usa PUT para criar/atualizar
-            const response = await axios.put(`/banking/v2/webhooks/${tipoWebhook}`, {
-                webhookUrl: dto.webhookUrl,
-            });
+            // ✅ Pix usa endpoint /pix/v2/webhook/{chave}
+            if (tipoWebhook === 'pix') {
+                const pixKey = this.configService.get<string>('INTER_PIX_KEY');
+                if (!pixKey) {
+                    throw new BadRequestException(
+                        'INTER_PIX_KEY não configurada no .env. Configure a chave Pix principal.',
+                    );
+                }
 
-            this.logger.log(`✅ Callback criado com sucesso!`);
-            return response.data;
+                const contaCorrente = this.configService.get<string>('INTER_CONTA_CORRENTE');
+                if (!contaCorrente) {
+                    throw new BadRequestException(
+                        'INTER_CONTA_CORRENTE não configurada no .env',
+                    );
+                }
+
+                const endpoint = `/pix/v2/webhook/${encodeURIComponent(pixKey)}`;
+                const fullUrl = `${axios.defaults.baseURL}${endpoint}`;
+
+                this.logger.debug(`📍 URL completa: ${fullUrl}`);
+                this.logger.debug(`📤 Método: PUT`);
+                this.logger.debug(`📦 Payload: ${JSON.stringify({ webhookUrl: dto.webhookUrl })}`);
+                this.logger.debug(`🔑 Chave Pix: ${pixKey}`);
+                this.logger.debug(`🏦 Conta Corrente: ${contaCorrente}`);
+
+                const response = await axios.put(
+                    endpoint,
+                    { webhookUrl: dto.webhookUrl },
+                    {
+                        headers: {
+                            'x-conta-corrente': contaCorrente,
+                        },
+                    },
+                );
+
+                this.logger.log(`✅ Webhook Pix cadastrado com sucesso!`);
+                return response.data;
+            }
+
+            // ✅ Boletos usa endpoint /banking/v2/webhooks/boletos
+            if (tipoWebhook === 'boletos') {
+                const endpoint = `/banking/v2/webhooks/boletos`;
+                const response = await axios.put(endpoint, {
+                    webhookUrl: dto.webhookUrl,
+                });
+
+                this.logger.log(`✅ Webhook Boleto cadastrado com sucesso!`);
+                return response.data;
+            }
+
+            throw new BadRequestException(
+                'Tipo de webhook inválido. Use: pix ou boletos',
+            );
         } catch (error: any) {
             const status = error.response?.status;
             const message = error.response?.data?.message || error.message;
+            const data = error.response?.data;
 
-            this.logger.error(`❌ Erro ao criar callback ${tipoWebhook}:`, message);
-            this.logger.error('Detalhes:', error.response?.data);
+            this.logger.error(`❌ Erro ao criar callback ${tipoWebhook}:`);
+            this.logger.error(`   Status: ${status}`);
+            this.logger.error(`   Message: ${message}`);
+            this.logger.error(`   Data:`, JSON.stringify(data, null, 2));
+            this.logger.error(`   URL: ${error.config?.baseURL}${error.config?.url}`);
 
             if (status === 400) {
                 throw new BadRequestException(`Dados inválidos: ${message}`);
@@ -88,7 +200,7 @@ export class InterWebhookService {
 
             if (status === 404) {
                 throw new BadRequestException(
-                    `Endpoint não encontrado. Verifique se o tipo de webhook '${tipoWebhook}' é válido (pix ou boletos)`,
+                    `Endpoint não encontrado. URL: ${error.config?.baseURL}${error.config?.url}`,
                 );
             }
 
@@ -99,7 +211,7 @@ export class InterWebhookService {
     }
 
     /**
-     * ✏️ Atualizar callback (mesmo que criar na Inter)
+     * ✏️ Atualizar callback (mesmo que criar na Inter - usa PUT)
      */
     async updateCallback(
         tipoWebhook: string,
@@ -119,10 +231,30 @@ export class InterWebhookService {
 
         try {
             const axios = this.authService.getAxiosInstance();
-            await axios.delete(`/banking/v2/webhooks/${tipoWebhook}`);
 
-            this.logger.log(`✅ Callback excluído com sucesso`);
-            return { success: true, message: 'Callback excluído' };
+            if (tipoWebhook === 'pix') {
+                const pixKey = this.configService.get<string>('INTER_PIX_KEY');
+                if (!pixKey) {
+                    throw new BadRequestException('INTER_PIX_KEY não configurada');
+                }
+                const contaCorrente = this.configService.get<string>('INTER_CONTA_CORRENTE');
+
+                await axios.delete(`/pix/v2/webhook/${encodeURIComponent(pixKey)}`, {
+                    headers: {
+                        'x-conta-corrente': contaCorrente,
+                    },
+                });
+
+                this.logger.log(`✅ Webhook Pix excluído`);
+                return { success: true, message: 'Webhook excluído' };
+            }
+
+            if (tipoWebhook === 'boletos') {
+                await axios.delete(`/banking/v2/webhooks/boletos`);
+                return { success: true, message: 'Webhook excluído' };
+            }
+
+            throw new BadRequestException('Tipo inválido');
         } catch (error: any) {
             const message = error.response?.data?.message || error.message;
             this.logger.error('❌ Erro ao excluir callback:', message);
@@ -143,7 +275,7 @@ export class InterWebhookService {
 
         if (!secret) {
             this.logger.warn('⚠️ INTER_WEBHOOK_SECRET não configurado, pulando validação');
-            return true; // ✅ Aceitar se não configurado
+            return true;
         }
 
         try {
@@ -185,7 +317,7 @@ export class InterWebhookService {
 
         for (const pix of pixList) {
             try {
-                const endToEnd = pix.e2eId || pix.endToEndId;
+                const endToEnd = pix.endToEndId || pix.e2eId;
                 const txid = pix.txid;
 
                 if (!endToEnd) {
@@ -219,23 +351,18 @@ export class InterWebhookService {
                 const valorCentavos = Math.round((pix.valor || 0) * 100);
 
                 await this.prisma.$transaction([
-                    // 1. Criar Deposit
                     this.prisma.deposit.create({
                         data: {
                             endToEnd,
                             receiptValue: valorCentavos,
                             receiptDate: new Date(pix.horario || new Date()),
-
                             payerName: pix.pagador?.nome,
                             payerTaxNumber: pix.pagador?.cpf || pix.pagador?.cnpj,
                             payerMessage: pix.infoPagador,
-
                             status: 'CONFIRMED',
                             bankPayload: pix as Prisma.InputJsonValue,
                         },
                     }),
-
-                    // 2. Criar Log
                     this.prisma.webhookLog.create({
                         data: {
                             source: 'INTER',
@@ -258,7 +385,7 @@ export class InterWebhookService {
                         source: 'INTER',
                         type: 'pix_received',
                         payload: pix as Prisma.InputJsonValue,
-                        endToEnd: pix.e2eId,
+                        endToEnd: pix.endToEndId || pix.e2eId,
                         txid: pix.txid,
                         processed: false,
                         error: error.message,
@@ -298,7 +425,7 @@ export class InterWebhookService {
             const mockPayload = {
                 pix: [
                     {
-                        e2eId: `E${Date.now()}TEST`,
+                        endToEndId: `E${Date.now()}TEST`,
                         txid: `TEST-${Date.now()}`,
                         valor: 100.5,
                         horario: new Date().toISOString(),

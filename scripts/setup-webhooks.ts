@@ -10,48 +10,63 @@ async function bootstrap() {
     const webhookService = app.get(InterWebhookService);
 
     const webhookUrl =
-        process.env.WEBHOOK_BASE_URL || 'https://sua-api.com';
+        process.env.WEBHOOK_BASE_URL || 'https://api.otsembank.com';
 
-    console.log('🔧 Configurando webhooks da Inter...\n');
+    console.log('🔧 Configurando webhook Pix da Inter...\n');
     console.log(`📍 URL Base: ${webhookUrl}\n`);
 
     try {
-        // ✅ Verificar callbacks existentes
-        console.log('🔍 Verificando callbacks existentes...\n');
+        // ✅ Verificar webhook Pix existente
+        console.log('🔍 Verificando webhook Pix existente...\n');
 
-        const pixCallback = await webhookService.getCallbacks('pix');
-        const boletoCallback = await webhookService.getCallbacks('boletos');
+        let pixCallback: any = { webhookUrl: null };
 
-        console.log('Pix atual:', pixCallback.webhookUrl || 'Nenhum');
-        console.log('Boleto atual:', boletoCallback.webhookUrl || 'Nenhum');
+        try {
+            pixCallback = await webhookService.getCallbacks('pix');
+            console.log('Pix atual:', pixCallback?.webhookUrl || 'Nenhum');
+        } catch (error: any) {
+            console.log('⚠️ Não foi possível consultar (continuando...)');
+        }
+
         console.log();
 
-        // ✅ Configurar Pix
+        // ✅ Configurar webhook Pix
         console.log('📱 Configurando webhook de Pix...');
-        await webhookService.createCallback('pix', {
-            webhookUrl: `${webhookUrl}/inter/webhooks/receive/pix`,
-        });
-        console.log('✅ Pix webhook configurado!\n');
+        try {
+            const result = await webhookService.createCallback('pix', {
+                webhookUrl: `${webhookUrl}/inter/webhooks/receive/pix`,
+            });
 
-        // ✅ Configurar Boletos
-        console.log('📄 Configurando webhook de Boletos...');
-        await webhookService.createCallback('boletos', {
-            webhookUrl: `${webhookUrl}/inter/webhooks/receive/boletos`,
-        });
-        console.log('✅ Boleto webhook configurado!\n');
+            console.log('✅ Webhook Pix configurado com sucesso!\n');
+            console.log('Resposta da Inter:');
+            console.log(JSON.stringify(result, null, 2));
+            console.log();
+        } catch (error: any) {
+            console.error('❌ Erro ao configurar Pix:', error.message);
+            console.error('Detalhes:', error.response?.data || error);
+            console.log();
 
-        console.log('🎉 Webhooks configurados com sucesso!\n');
+            // Não sair com erro, só informar
+            console.log('⚠️ Verifique as credenciais e certificados.\n');
+        }
 
-        // ✅ Verificar novamente
+        // ✅ Verificação final
         console.log('✅ Verificação final:');
-        const pixFinal = await webhookService.getCallbacks('pix');
-        const boletoFinal = await webhookService.getCallbacks('boletos');
 
-        console.log('Pix:', pixFinal.webhookUrl);
-        console.log('Boleto:', boletoFinal.webhookUrl);
+        try {
+            const pixFinal = await webhookService.getCallbacks('pix');
+            console.log('Pix:', pixFinal?.webhookUrl || 'Não cadastrado');
+
+            if (pixFinal?.webhookUrl) {
+                console.log('\n🎉 Webhook cadastrado! Agora você receberá notificações de Pix.');
+            }
+        } catch (error: any) {
+            console.log('Pix: Não foi possível verificar');
+            console.log('\n💡 Dica: Verifique manualmente no portal da Inter ou teste recebendo um Pix.');
+        }
     } catch (error: any) {
-        console.error('❌ Erro ao configurar webhooks:', error.message);
-        console.error('Detalhes:', error.response?.data || error);
+        console.error('❌ Erro fatal:', error.message);
+        console.error('Stack:', error.stack);
         process.exit(1);
     }
 
@@ -60,6 +75,6 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-    console.error('❌ Erro fatal:', error);
+    console.error('❌ Erro ao inicializar:', error);
     process.exit(1);
 });
