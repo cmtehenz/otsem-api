@@ -8,26 +8,38 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { InterAuthService } from './services/inter-auth.service';
 import { InterWebhookService } from './services/inter-webhook.service';
 import { InterPixKeysService } from './services/inter-pix-keys.service';
+import { InterBankingService } from './services/inter-banking.service'; // ✅ ADICIONAR
 
 // Controllers
 import { InterWebhookController } from './controllers/inter-webhook.controller';
 import { InterPixKeysController } from './controllers/inter-pix-keys.controller';
+import { InterTestController } from './controllers/inter-test.controller';
+import { InterBankingController } from './controllers/inter-banking.controller';
+import { InterPixController } from './controllers/inter-pix.controller';
+import { InterPixService } from './services/inter-pix.service';
 
 @Module({
     imports: [ConfigModule, PrismaModule],
     controllers: [
         InterWebhookController,
         InterPixKeysController,
+        InterTestController,
+        InterBankingController,
+        InterPixController,
     ],
     providers: [
         InterAuthService,
         InterWebhookService,
+        InterPixService,
         InterPixKeysService,
+        InterBankingService, // ✅ ADICIONAR aqui
     ],
     exports: [
         InterAuthService,
         InterWebhookService,
         InterPixKeysService,
+        InterPixService,
+        InterBankingService, // ✅ E ADICIONAR aqui
     ],
 })
 export class InterModule { }

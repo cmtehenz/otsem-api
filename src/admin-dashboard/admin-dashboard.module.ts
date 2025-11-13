@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { InterModule } from '../inter/inter.module';
-import { AdminDashboardController } from './admin-dashboard.controller';
+
 import { AdminDashboardService } from './admin-dashboard.service';
+import { AdminDashboardController } from './admin-dashboard.controller';
 
 @Module({
   imports: [
     PrismaModule,
-    InterModule, // Importing InterModule to use InterBankingService
+    forwardRef(() => InterModule), // acesso ao InterBankingService
   ],
   controllers: [AdminDashboardController],
   providers: [AdminDashboardService],
