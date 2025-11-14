@@ -283,7 +283,7 @@ model Payment {
   errorMessage String?       @db.Text
 
   bankPayload Json
-  externalId  String? @unique
+  // externalId  String? @unique
 
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
