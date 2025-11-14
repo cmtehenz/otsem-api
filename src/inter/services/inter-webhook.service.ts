@@ -308,6 +308,9 @@ export class InterWebhookService {
         this.logger.log('💰 Processando Pix recebido...');
         this.logger.debug('Payload:', JSON.stringify(payload, null, 2));
 
+        // Adiciona um console.log para ver tudo que vem do Inter
+        console.log('🔎 Payload completo recebido do Inter:', JSON.stringify(payload, null, 2));
+
         const pixList = payload.pix || [];
 
         if (!Array.isArray(pixList) || pixList.length === 0) {
