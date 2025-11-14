@@ -12,6 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { SendPixDto, PixPaymentResponseDto } from '../dto/send-pix.dto';
 import { CreatePixChargeDto } from '../dto/create-pix-charge.dto';
+import { PixReceived } from '../types/pix-received.type';
 
 @Injectable()
 export class InterPixService {
@@ -366,5 +367,18 @@ export class InterPixService {
             CANCELADA: 'FAILED',
         };
         return statusMap[status?.toUpperCase()] || 'PENDING';
+    }
+
+    /**
+     * 🔄 Buscar e processar Pix recebidos
+     */
+    async fetchAndProcessPixReceived(): Promise<void> {
+        // TODO: Consultar API do Inter e buscar Pix recebidos
+        const pixList: PixReceived[] = []; // Simulação
+        for (const pix of pixList) {
+            // TODO: Buscar customer pelo txid/chave
+            // TODO: Processar Pix para o customer
+            this.logger.log(`Processando Pix: ${pix.txid}`);
+        }
     }
 }
