@@ -9,7 +9,7 @@ export class InterPixPollingTask {
     constructor(private readonly interPixService: InterPixService) { }
 
     // Executa a cada 5 minutos
-    @Cron('*/5 * * * *')
+    @Cron('*/1 * * * *')
     async pollPixReceived() {
         this.logger.log('🔄 Consultando Pix recebidos via polling...');
         await this.interPixService.fetchAndProcessPixReceived();
