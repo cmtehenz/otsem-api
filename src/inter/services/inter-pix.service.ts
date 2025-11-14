@@ -378,44 +378,91 @@ export class InterPixService {
             const { chave } = this.getMainPixKey();
             const axios = this.authService.getAxiosInstance();
 
-            // Consulta Pix recebidos (ajuste endpoint conforme documentação Inter)
-            const response = await axios.get(`/banking/v2/pix/${chave}/recebidos`, { timeout: 10000 });
-            const pixList: PixReceived[] = response.data.pix || [];
+            const now = new Date();
+            const dataInicio = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000) // 5 dias atrás
+                .toISOString()
+                .slice(0, 10); // Formato YYYY-MM-DD
+            const dataFim = now.toISOString().slice(0, 10); // Formato YYYY-MM-DD
+
+            const response = await axios.get('/banking/v2/extrato/completo', {
+                timeout: 10000,
+                params: {
+                    dataInicio, // Ex: '2025-11-09'
+                    dataFim,    // Ex: '2025-11-14'
+                    pagina: 0,
+                    tamanhoPagina: 50,
+                    tipoOperacao: 'C', // Apenas créditos (entradas)
+                    tipoTransacao: 'PIX', // Apenas Pix
+                },
+                headers: {
+                    'x-conta-corrente': '421136545', // sem zeros à esquerda
+                },
+            });
+
+            // As transações Pix recebidas estarão em response.data.transacoes
+            const pixList = response.data.transacoes || [];
+
+            if (!Array.isArray(pixList) || pixList.length === 0) {
+                this.logger.log('ℹ️ Nenhum Pix recebido encontrado.');
+                return;
+            }
 
             for (const pix of pixList) {
-                // Verifica se já foi processado (evita duplicidade)
-                const alreadyProcessed = await this.prisma.payment.findFirst({
-                    where: { endToEnd: pix.e2eId },
-                });
-                if (alreadyProcessed) {
-                    this.logger.warn(`🔁 Pix já processado: ${pix.e2eId}`);
+                const detalhes = pix.detalhes || {};
+                const e2eId = detalhes.endToEndId;
+                const chave = detalhes.chavePixRecebedor;
+                const valor = Number(pix.valor);
+
+                if (!e2eId || !chave || !valor) {
+                    this.logger.warn(`⚠️ Pix inválido ou incompleto: ${JSON.stringify(pix)}`);
                     continue;
                 }
 
-                // Busca customer pelo txid ou chave
+                // Verifica se já foi processado (evita duplicidade)
+                const alreadyProcessed = await this.prisma.payment.findFirst({
+                    where: { endToEnd: e2eId },
+                });
+                if (alreadyProcessed) {
+                    this.logger.warn(`🔁 Pix já processado: ${e2eId}`);
+                    continue;
+                }
+
+                // Busca customer pela chave Pix
                 const customer = await this.prisma.customer.findFirst({
                     where: {
-                        pixKeys: {
-                            some: {
-                                keyValue: pix.chave, // <-- campo correto!
+                        OR: [
+                            { mainPixKey: chave },
+                            {
+                                pixKeys: {
+                                    some: { keyValue: chave },
+                                },
                             },
-                        },
+                        ],
                     },
                 });
 
                 if (!customer) {
-                    this.logger.warn(`⚠️ Customer não encontrado para Pix: ${pix.txid}`);
+                    this.logger.warn(`⚠️ Customer não encontrado para chave Pix: ${chave} | txid: ${detalhes.txId}`);
+                    continue;
+                }
+
+                // Verifica conta do customer
+                const account = await this.prisma.account.findUnique({
+                    where: { customerId: customer.id },
+                });
+                if (!account) {
+                    this.logger.warn(`⚠️ Conta não encontrada para o customer: ${customer.id}`);
                     continue;
                 }
 
                 // Salva pagamento recebido
                 await this.prisma.payment.create({
                     data: {
-                        endToEnd: pix.e2eId,
-                        paymentValue: Math.round(pix.valor * 100),
-                        paymentDate: new Date(pix.horario),
+                        endToEnd: e2eId,
+                        paymentValue: Math.round(valor * 100),
+                        paymentDate: new Date(pix.dataInclusao),
                         receiverName: customer.name,
-                        receiverPixKey: pix.chave,
+                        receiverPixKey: chave,
                         status: 'CONFIRMED',
                         bankPayload: pix as any,
                         customerId: customer.id,
@@ -427,15 +474,18 @@ export class InterPixService {
                     where: { customerId: customer.id },
                     data: {
                         balance: {
-                            increment: pix.valor,
+                            increment: valor,
                         },
                     },
                 });
 
-                this.logger.log(`✅ Pix recebido salvo: ${pix.e2eId} | Customer: ${customer.id}`);
+                this.logger.log(`✅ Pix recebido salvo: ${e2eId} | Customer: ${customer.id}`);
             }
         } catch (error: any) {
             this.logger.error('❌ Erro ao buscar/processar Pix recebidos:', error.message);
+            if (error.response) {
+                this.logger.error('Detalhes:', JSON.stringify(error.response.data));
+            }
         }
     }
 }

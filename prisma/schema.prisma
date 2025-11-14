@@ -177,6 +177,8 @@ model Customer {
   externalClientId String?
   externalAccredId String?
 
+  mainPixKey String? @unique
+
   // Extras
   metadata Json?
 
