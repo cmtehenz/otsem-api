@@ -15,6 +15,7 @@ import { MailModule } from './mail/mail.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { InterModule } from './inter/inter.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     AdminDashboardModule,
     InterModule,
     TransactionsModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
