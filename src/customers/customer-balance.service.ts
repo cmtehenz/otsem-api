@@ -58,11 +58,31 @@ export class CustomerBalanceService {
     }
 
     async getPixBalanceByCustomerId(customerId: string) {
+        // Busca a chave Pix do customer
+        const customer = await this.prisma.customer.findUnique({
+            where: { id: customerId },
+            select: { pixKeys: true },
+        });
+        if (!customer) throw new NotFoundException('Customer não encontrado');
+        const pixKeyObj = customer.pixKeys && customer.pixKeys.length > 0 ? customer.pixKeys[0] : null;
+        const pixKeyValue = pixKeyObj ? pixKeyObj.keyValue : null;
+
+        if (!pixKeyValue) {
+            return {
+                available: 0,
+                blocked: 0,
+                total: 0,
+                currency: 'BRL',
+                pixKey: null,
+                updatedAt: new Date().toISOString(),
+            };
+        }
+
+        // Soma todos os depósitos confirmados recebidos pela chave Pix do customer
         const deposits = await this.prisma.deposit.findMany({
             where: {
-                customerId,
-                status: DepositStatus.CONFIRMED, // use o enum do Prisma!
-                receiverPixKey: { not: null },
+                receiverPixKey: pixKeyValue,
+                status: DepositStatus.CONFIRMED,
             },
             select: { receiptValue: true },
         });
@@ -74,6 +94,7 @@ export class CustomerBalanceService {
             blocked: 0,
             total,
             currency: 'BRL',
+            pixKey: pixKeyValue,
             updatedAt: new Date().toISOString(),
         };
     }
