@@ -39,6 +39,9 @@ export class PaymentsService {
             },
         });
 
+        console.log('Filtro usado:', filter);
+        console.log('Pagamentos encontrados:', payments.length);
+
         return payments;
     }
 }
