@@ -19,7 +19,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private mail: MailService,
-  ) {}
+  ) { }
 
   async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -47,6 +47,7 @@ export class AuthService {
     if (exists) throw new BadRequestException('email_in_use');
 
     const hash = await bcrypt.hash(dto.password, SALT_ROUNDS);
+    // Cria o usuário
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -55,6 +56,27 @@ export class AuthService {
         role: Role.CUSTOMER,
       },
       select: { id: true, email: true, role: true },
+    });
+
+    // Cria o cliente vinculado ao usuário
+    const customer = await this.prisma.customer.create({
+      data: {
+        userId: user.id,
+        name: dto.name ?? '',
+        email: dto.email,
+        type: 'PF', // ou 'PJ' conforme sua lógica
+      },
+      select: { id: true },
+    });
+
+    // Cria a conta vinculada ao cliente
+    await this.prisma.account.create({
+      data: {
+        customerId: customer.id,
+        balance: 0,
+        status: 'active',
+        // outros campos padrão se quiser
+      },
     });
 
     const payload: JwtPayload = {
