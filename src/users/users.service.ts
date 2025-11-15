@@ -20,88 +20,88 @@ function onlyDigits(v: string): string {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async createByAdminWithCustomer(dto: CreateUserWithCustomerDto) {
-    const exists = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
-      select: { id: true },
-    });
-    if (exists) {
-      throw new BadRequestException(
-        'Este e-mail já está em uso. Por favor, utilize outro endereço.',
-      );
-    }
+  // async createByAdminWithCustomer(dto: CreateUserWithCustomerDto) {
+  //   const exists = await this.prisma.user.findUnique({
+  //     where: { email: dto.email.toLowerCase() },
+  //     select: { id: true },
+  //   });
+  //   if (exists) {
+  //     throw new BadRequestException(
+  //       'Este e-mail já está em uso. Por favor, utilize outro endereço.',
+  //     );
+  //   }
 
-    const rawPhone = dto.customer.phone?.trim() ?? '';
-    const phone = onlyDigits(rawPhone);
-    if (!phone) {
-      throw new BadRequestException(
-        'Telefone é obrigatório para criar o cadastro do cliente.',
-      );
-    }
+  //   const rawPhone = dto.customer.phone?.trim() ?? '';
+  //   const phone = onlyDigits(rawPhone);
+  //   if (!phone) {
+  //     throw new BadRequestException(
+  //       'Telefone é obrigatório para criar o cadastro do cliente.',
+  //     );
+  //   }
 
-    const hash = await bcrypt.hash(dto.password, SALT_ROUNDS);
+  //   const hash = await bcrypt.hash(dto.password, SALT_ROUNDS);
 
-    try {
-      const result = await this.prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            email: dto.email.toLowerCase(),
-            passwordHash: hash,
-            name: dto.name?.trim() || null,
-            role: dto.role ?? Role.CUSTOMER,
-            isActive: dto.isActive ?? true,
-          },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            isActive: true,
-            createdAt: true,
-          },
-        });
+  //   try {
+  //     const result = await this.prisma.$transaction(async (tx) => {
+  //       const user = await tx.user.create({
+  //         data: {
+  //           email: dto.email.toLowerCase(),
+  //           passwordHash: hash,
+  //           name: dto.name?.trim() || null,
+  //           role: dto.role ?? Role.CUSTOMER,
+  //           isActive: dto.isActive ?? true,
+  //         },
+  //         select: {
+  //           id: true,
+  //           email: true,
+  //           name: true,
+  //           role: true,
+  //           isActive: true,
+  //           createdAt: true,
+  //         },
+  //       });
 
-        const customer = await tx.customer.create({
-          data: {
-            type: dto.customer.type,
-            accountStatus: AccountStatus.not_requested,
-            userId: user.id,
-            externalClientId: null,
-            externalAccredId: null,
-            email: user.email,
-            phone,
-            name: dto.name ?? '',
-            cpf: null,
-            birthday: null,
-            cnpj: null,
-          },
-          select: {
-            id: true,
-            type: true,
-            accountStatus: true,
-            email: true,
-            phone: true,
-            createdAt: true,
-          },
-        });
+  //       const customer = await tx.customer.create({
+  //         data: {
+  //           type: dto.customer.type,
+  //           accountStatus: AccountStatus.not_requested,
+  //           userId: user.id,
+  //           externalClientId: null,
+  //           externalAccredId: null,
+  //           email: user.email,
+  //           phone,
+  //           name: dto.name ?? '',
+  //           cpf: null,
+  //           birthday: null,
+  //           cnpj: null,
+  //         },
+  //         select: {
+  //           id: true,
+  //           type: true,
+  //           accountStatus: true,
+  //           email: true,
+  //           phone: true,
+  //           createdAt: true,
+  //         },
+  //       });
 
-        return { user, customer };
-      });
+  //       return { user, customer };
+  //     });
 
-      return { ...result, message: 'Usuário e cliente criados com sucesso.' };
-    } catch (e) {
-      if (
-        e instanceof Prisma.PrismaClientKnownRequestError &&
-        e.code === 'P2002'
-      ) {
-        // unique constraint (email, etc.)
-        throw new BadRequestException(
-          'Este e-mail já está em uso. Por favor, utilize outro endereço.',
-        );
-      }
-      throw e;
-    }
-  }
+  //     return { ...result, message: 'Usuário e cliente criados com sucesso.' };
+  //   } catch (e) {
+  //     if (
+  //       e instanceof Prisma.PrismaClientKnownRequestError &&
+  //       e.code === 'P2002'
+  //     ) {
+  //       // unique constraint (email, etc.)
+  //       throw new BadRequestException(
+  //         'Este e-mail já está em uso. Por favor, utilize outro endereço.',
+  //       );
+  //     }
+  //     throw e;
+  //   }
+  // }
 
   // async createByAdmin(dto: {
   //     email: string;

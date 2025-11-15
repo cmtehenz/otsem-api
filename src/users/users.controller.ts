@@ -20,25 +20,25 @@ import { PublicRegisterDto } from './dto/public-register.dto';
 export class UsersController {
   constructor(private readonly svc: UsersService) { }
 
-  @Post('register') // pública
-  async register(@Body() dto: PublicRegisterDto) {
-    const result = await this.svc.createByAdminWithCustomer({
-      email: dto.email,
-      password: dto.password,
-      name: dto.name,
-      customer: {
-        type: CustomerType.PF,
-        name: dto.name,
-        phone: '00000000000',
-        productId: 1,
-      } as any,
-    });
-    return {
-      message: 'Conta criada com sucesso!',
-      user: result.user,
-      customer: result.customer,
-    };
-  }
+  // @Post('register') // pública
+  // async register(@Body() dto: PublicRegisterDto) {
+  //   const result = await this.svc.createByAdminWithCustomer({
+  //     email: dto.email,
+  //     password: dto.password,
+  //     name: dto.name,
+  //     customer: {
+  //       type: CustomerType.PF,
+  //       name: dto.name,
+  //       phone: '00000000000',
+  //       productId: 1,
+  //     } as any,
+  //   });
+  //   return {
+  //     message: 'Conta criada com sucesso!',
+  //     user: result.user,
+  //     customer: result.customer,
+  //   };
+  // }
 
   @Get()
   async list(@Query('take') take = '50', @Query('skip') skip = '0') {
