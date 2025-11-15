@@ -71,13 +71,19 @@ export class AuthService {
     });
 
     // Cria a conta vinculada ao cliente
-    await this.prisma.account.create({
-      data: {
-        customerId: customer.id,
-        balance: 0,
-        status: 'active',
-      },
-    });
+    console.log('Tentando criar account para customerId:', customer.id);
+    try {
+      const account = await this.prisma.account.create({
+        data: {
+          customerId: customer.id,
+          balance: 0,
+          status: 'active',
+        },
+      });
+      console.log('Account criada com sucesso:', account);
+    } catch (err) {
+      console.error('Erro ao criar account:', err);
+    }
 
     const payload: JwtPayload = {
       sub: user.id,
