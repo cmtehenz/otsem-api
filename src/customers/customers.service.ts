@@ -208,7 +208,7 @@ export class CustomersService {
   /**
    * 🔄 Converter para Response DTO
    */
-  private toResponse(customer: any): CustomerResponse {
+  private toResponse = (customer: any): CustomerResponse => {
     return {
       id: customer.id,
       type: customer.type,
