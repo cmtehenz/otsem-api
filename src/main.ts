@@ -2,7 +2,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { Request, Response, NextFunction } from 'express';
 import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
@@ -29,17 +28,6 @@ async function bootstrap() {
     exposedHeaders: ['Authorization'],
     credentials: false,
     maxAge: 3600,
-  });
-
-  interface CustomRequest extends Request {
-    body: any;
-  }
-
-  app.use((req: CustomRequest, res: Response, next: NextFunction) => {
-    if (req.method === 'POST') {
-      console.log('Body recebido:', req.body);
-    }
-    next();
   });
 
   // Habilitar validação global

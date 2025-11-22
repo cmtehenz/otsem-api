@@ -9,10 +9,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InterAuthService } from './inter-auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, TransactionType } from '@prisma/client';
 import { SendPixDto, PixPaymentResponseDto } from '../dto/send-pix.dto';
 import { CreatePixChargeDto } from '../dto/create-pix-charge.dto';
-import { PixReceived } from '../types/pix-received.type';
 
 @Injectable()
 export class InterPixService {
@@ -236,7 +235,7 @@ export class InterPixService {
         const totalToday = await this.prisma.transaction.aggregate({
             where: {
                 accountId: account.id,
-                type: 'PIX_OUT',
+                type: TransactionType.PIX_OUT,
                 status: 'COMPLETED',
                 createdAt: { gte: today },
             },
@@ -258,7 +257,7 @@ export class InterPixService {
         const totalMonth = await this.prisma.transaction.aggregate({
             where: {
                 accountId: account.id,
-                type: 'PIX_OUT',
+                type: TransactionType.PIX_OUT,
                 status: 'COMPLETED',
                 createdAt: { gte: firstDayOfMonth },
             },
@@ -323,7 +322,7 @@ export class InterPixService {
             this.prisma.transaction.create({
                 data: {
                     accountId: account.id,
-                    type: 'PIX_OUT',
+                    type: TransactionType.PIX_OUT,
                     status: 'COMPLETED',
                     amount: valorDecimal,
                     balanceBefore,
@@ -383,29 +382,27 @@ export class InterPixService {
             const axios = this.authService.getAxiosInstance();
 
             const now = new Date();
-            const dataInicio = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000) // 5 dias atrás
+            const dataInicio = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
                 .toISOString()
-                .slice(0, 10); // Formato YYYY-MM-DD
-            const dataFim = now.toISOString().slice(0, 10); // Formato YYYY-MM-DD
+                .slice(0, 10);
+            const dataFim = now.toISOString().slice(0, 10);
 
             const response = await axios.get('/banking/v2/extrato/completo', {
                 timeout: 10000,
                 params: {
-                    dataInicio, // Ex: '2025-11-09'
-                    dataFim,    // Ex: '2025-11-14'
+                    dataInicio,
+                    dataFim,
                     pagina: 0,
                     tamanhoPagina: 50,
-                    tipoOperacao: 'C', // Apenas créditos (entradas)
-                    tipoTransacao: 'PIX', // Apenas Pix
+                    tipoOperacao: 'C',
+                    tipoTransacao: 'PIX',
                 },
                 headers: {
-                    'x-conta-corrente': '421136545', // sem zeros à esquerda
+                    'x-conta-corrente': '421136545',
                 },
             });
 
-            // As transações Pix recebidas estarão em response.data.transacoes
             const pixList = response.data.transacoes || [];
-
             if (!Array.isArray(pixList) || pixList.length === 0) {
                 this.logger.log('ℹ️ Nenhum Pix recebido encontrado.');
                 return;
@@ -422,7 +419,6 @@ export class InterPixService {
                     continue;
                 }
 
-                // Verifica se já foi processado (evita duplicidade)
                 const alreadyProcessed = await this.prisma.payment.findFirst({
                     where: { endToEnd: e2eId },
                 });
@@ -431,7 +427,6 @@ export class InterPixService {
                     continue;
                 }
 
-                // Busca customer pela chave Pix
                 const customer = await this.prisma.customer.findFirst({
                     where: {
                         OR: [
@@ -450,7 +445,6 @@ export class InterPixService {
                     continue;
                 }
 
-                // Verifica conta do customer
                 const account = await this.prisma.account.findUnique({
                     where: { customerId: customer.id },
                 });
@@ -459,7 +453,6 @@ export class InterPixService {
                     continue;
                 }
 
-                // Salva pagamento recebido
                 await this.prisma.payment.create({
                     data: {
                         endToEnd: e2eId,
@@ -473,7 +466,6 @@ export class InterPixService {
                     },
                 });
 
-                // Atualiza saldo do cliente
                 await this.prisma.account.update({
                     where: { customerId: customer.id },
                     data: {
