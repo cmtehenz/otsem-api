@@ -8,6 +8,7 @@ import {
     Body,
     UseGuards,
     Request,
+    Query,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -22,13 +23,18 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../auth/roles.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { Role } from '@prisma/client';
+import { InterPixTesteService } from '../services/inter-pix-teste.service';
+import type { PixTestePayload } from '../services/inter-pix-teste.service';
 
 @ApiTags('💸 Pix (Inter)')
 @ApiBearerAuth()
 @Controller('inter/pix')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class InterPixController {
-    constructor(private readonly pixService: InterPixService) { }
+    constructor(
+        private readonly pixService: InterPixService,
+        private readonly pixTesteService: InterPixTesteService,
+    ) { }
 
     // ==================== ENVIAR PIX ====================
 
@@ -71,5 +77,15 @@ export class InterPixController {
     @ApiOperation({ summary: '🔍 Consultar cobrança Pix' })
     async getCobranca(@Param('txid') txid: string) {
         return this.pixService.getCobranca(txid);
+    }
+
+    @Post('testar-envio')
+    @ApiOperation({ summary: '🔬 Testar envio Pix (direto para Inter)' })
+    async testarEnvioPix(@Body() body: PixTestePayload, @Query('idIdempotente') idIdempotente: string) {
+        console.log('Controller - testarEnvioPix - body recebido:', body);
+        return this.pixTesteService.testarEnvioPix({
+            payload: body,
+            idIdempotente,
+        });
     }
 }

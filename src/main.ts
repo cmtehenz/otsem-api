@@ -11,8 +11,8 @@ async function bootstrap() {
     origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
       const allowed: string[] = [
         'https://otsem-web.vercel.app',
-        'https://www.otsempay.com',
-        'https://www.otsempay.com.br',
+        'https://app.otsempay.com',
+        'https://app.otsempay.com.br',
         'http://localhost:3000',
         'http://localhost:3001',
       ];

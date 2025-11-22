@@ -53,6 +53,8 @@ export class SendPixDto {
     @IsOptional()
     @IsString()
     nomeFavorecido?: string;
+
+    customerId?: string;
 }
 
 export class PixPaymentResponseDto {

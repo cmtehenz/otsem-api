@@ -18,6 +18,7 @@ import { InterTestController } from './controllers/inter-test.controller';
 import { InterBankingController } from './controllers/inter-banking.controller';
 import { InterPixController } from './controllers/inter-pix.controller';
 import { InterPixPollingTask } from './tasks/inter-pix-polling.task';
+import { InterPixTesteService } from './services/inter-pix-teste.service';
 
 @Module({
     imports: [ConfigModule, PrismaModule],
@@ -31,6 +32,7 @@ import { InterPixPollingTask } from './tasks/inter-pix-polling.task';
     providers: [
         InterAuthService,
         InterWebhookService,
+        InterPixTesteService,
         InterPixService,
         InterPixKeysService,
         InterBankingService, // ✅ ADICIONAR aqui
