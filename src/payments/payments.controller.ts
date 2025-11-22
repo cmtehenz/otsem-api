@@ -14,6 +14,13 @@ import { PaymentResponseDto } from './dto/payment-response.dto';
 import { InterPixService } from '../inter/services/inter-pix.service';
 import { SendPixDto } from '../inter/dto/send-pix.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { Request } from 'express';
+
+interface User {
+    role: 'CUSTOMER' | 'ADMIN';
+    customerId?: string;
+    // add other properties as needed
+}
 
 @Controller('payments')
 export class PaymentsController {
@@ -22,19 +29,21 @@ export class PaymentsController {
         private readonly interPixService: InterPixService,
     ) { }
 
-    @Get()
-    async listPayments(@Query() query: PaymentListDto): Promise<PaymentResponseDto[]> {
-        return this.paymentsService.listPayments(query);
-    }
-
     @UseGuards(JwtAuthGuard)
     @Post('pix/send')
-    async sendPix(@Body() dto: SendPixDto, @Req() req) {
-        const user = req.user;
+    async sendPix(@Body() dto: SendPixDto, @Req() req: Request) {
+        const user = req.user as User;
 
         let customerId: string;
 
+        if (!user) {
+            throw new BadRequestException('Usuário não encontrado na requisição');
+        }
+
         if (user.role === 'CUSTOMER') {
+            if (!user.customerId) {
+                throw new BadRequestException('customerId não encontrado para o usuário CUSTOMER');
+            }
             customerId = user.customerId;
         } else if (user.role === 'ADMIN') {
             if (!dto.customerId) {
