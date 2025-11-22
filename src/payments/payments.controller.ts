@@ -30,30 +30,65 @@ export class PaymentsController {
     ) { }
 
     @UseGuards(JwtAuthGuard)
-    @Post('pix/send')
-    async sendPix(@Body() dto: SendPixDto, @Req() req: Request) {
+    @Get()
+    async listPayments(
+        @Query('customerId') customerIdQuery: string,
+        @Query('dataInicio') dataInicio: string,
+        @Query('dataFim') dataFim: string,
+        @Req() req: Request
+    ) {
         const user = req.user as User;
 
-        let customerId: string;
-
-        if (!user) {
-            throw new BadRequestException('Usuário não encontrado na requisição');
+        // ADMIN sem customerId: retorna todas as transações
+        if (user.role === 'ADMIN' && !customerIdQuery) {
+            return this.paymentsService.listPayments({
+                dataInicio,
+                dataFim,
+            });
         }
 
-        if (user.role === 'CUSTOMER') {
-            if (!user.customerId) {
-                throw new BadRequestException('customerId não encontrado para o usuário CUSTOMER');
-            }
-            customerId = user.customerId;
-        } else if (user.role === 'ADMIN') {
-            if (!dto.customerId) {
-                throw new BadRequestException('customerId deve ser informado pelo ADMIN');
-            }
-            customerId = dto.customerId;
-        } else {
-            throw new BadRequestException('Usuário não autorizado para enviar Pix');
+        // CUSTOMER ou ADMIN com customerId: retorna apenas do customerId
+        let customerId = user.customerId;
+        if (user.role === 'ADMIN' && customerIdQuery) {
+            customerId = customerIdQuery;
         }
 
-        return this.interPixService.sendPix(customerId, dto);
+        if (!customerId) {
+            throw new BadRequestException('customerId não encontrado');
+        }
+
+        return this.paymentsService.listPayments({
+            customerId,
+            dataInicio,
+            dataFim,
+        });
     }
+
+    // @UseGuards(JwtAuthGuard)
+    // @Post('pix/send')
+    // async sendPix(@Body() dto: SendPixDto, @Req() req: Request) {
+    //     const user = req.user as User;
+
+    //     let customerId: string;
+
+    //     if (!user) {
+    //         throw new BadRequestException('Usuário não encontrado na requisição');
+    //     }
+
+    //     if (user.role === 'CUSTOMER') {
+    //         if (!user.customerId) {
+    //             throw new BadRequestException('customerId não encontrado para o usuário CUSTOMER');
+    //         }
+    //         customerId = user.customerId;
+    //     } else if (user.role === 'ADMIN') {
+    //         if (!dto.customerId) {
+    //             throw new BadRequestException('customerId deve ser informado pelo ADMIN');
+    //         }
+    //         customerId = dto.customerId;
+    //     } else {
+    //         throw new BadRequestException('Usuário não autorizado para enviar Pix');
+    //     }
+
+    //     return this.interPixService.sendPix(customerId, dto);
+    // }
 }
