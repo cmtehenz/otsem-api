@@ -6,19 +6,16 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CustomersModule } from './customers/customers.module';
-import { AccreditationModule } from './accreditation/accreditation.module';
 import { StatementsModule } from './statements/statements.module';
-import { PixModule } from './pix/pix.module';
-import { PixLimitsModule } from './pix/limits/pix-limits.module';
-import { PixTransactionsModule } from './pix-transactions/pix-transactions.module';
 import { MailModule } from './mail/mail.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { InterModule } from './inter/inter.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AccountsModule } from './accounts/accounts.module';
-import { PixKeyModule } from './pix-key/pix-key.module';
 import { PaymentsModule } from './payments/payments.module';
+import { OkxModule } from './okx/okx.module';
+import { FdbankModule } from './fdbank/fdbank.module';
 
 @Module({
   imports: [
@@ -28,17 +25,12 @@ import { PaymentsModule } from './payments/payments.module';
     AuthModule,
     UsersModule,
     CustomersModule,
-    AccreditationModule,
     StatementsModule,
-    PixModule,
-    PixLimitsModule,
-    PixTransactionsModule,
-    // BrxPixModule,
-    // BrxWebhooksModule,
+    FdbankModule,
+    OkxModule,
     MailModule,
     AdminDashboardModule,
     InterModule,
-    PixKeyModule,
     PaymentsModule,
     TransactionsModule,
     ScheduleModule.forRoot(),

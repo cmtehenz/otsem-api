@@ -3,17 +3,15 @@ import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { StatementsService } from './statements.service';
 import { StatementsController } from './statements.controller';
-import { BrxAuthModule } from '../brx/brx-auth.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
     HttpModule,
-    BrxAuthModule,
     PrismaModule, // ← adicionar para validação de ownership
   ],
   controllers: [StatementsController],
   providers: [StatementsService],
   exports: [StatementsService],
 })
-export class StatementsModule {}
+export class StatementsModule { }
