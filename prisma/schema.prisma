@@ -343,10 +343,11 @@ model Refund {
 // ==================== WALLET & PAYOUT ====================
 
 model Wallet {
-  id         String  @id @default(cuid())
-  customerId String
-  currency   String  @default("BRL")
-  balance    Decimal @db.Decimal(18, 2)
+  id              String  @id @default(cuid())
+  customerId      String
+  currency        String  @default("BRL")
+  balance         Decimal @db.Decimal(18, 2)
+  externalAddress String? // endereço da carteira externa (ex: Solana, Ethereum)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -16,6 +16,7 @@ import { AccountsModule } from './accounts/accounts.module';
 import { PaymentsModule } from './payments/payments.module';
 import { OkxModule } from './okx/okx.module';
 import { FdbankModule } from './fdbank/fdbank.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { FdbankModule } from './fdbank/fdbank.module';
     CustomersModule,
     StatementsModule,
     FdbankModule,
+    WalletModule,
     OkxModule,
     MailModule,
     AdminDashboardModule,
