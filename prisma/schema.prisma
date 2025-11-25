@@ -348,6 +348,7 @@ model Wallet {
   currency        String  @default("BRL")
   balance         Decimal @db.Decimal(18, 2)
   externalAddress String? // endereço da carteira externa (ex: Solana, Ethereum)
+  isMain          Boolean @default(false) // indica se é a carteira principal
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

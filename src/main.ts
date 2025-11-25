@@ -26,8 +26,8 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['Authorization'],
-    credentials: false,
-    maxAge: 3600,
+    credentials: true,
+    maxAge: 3600
   });
 
   // Habilitar validação global
