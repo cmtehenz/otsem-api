@@ -16,8 +16,8 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { CustomerBalanceService } from './customer-balance.service';
 import { CustomerKycService } from './customer-kyc.service';
-import { CreateCustomerDto } from './dto/create-customer.dto'; // classe (valor) -> import normal
-import { UpdateCustomerDto } from './dto/update-customer.dto';   // classe (valor) -> import normal
+import { CreateCustomerLocalDto } from './dto/create-customer-local.dto'; // classe (valor) -> import normal
+import { UpdateCustomerLocalDto } from './dto/update-customer-local.dto';   // classe (valor) -> import normal
 import { QueryCustomersDto } from './dto/query-customers.dto';   // classe (valor) -> import normal
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -53,7 +53,7 @@ export class CustomersController {
 
   @Post()
   @ApiOperation({ summary: 'Criar customer' })
-  async create(@Req() req: AuthRequest, @Body() dto: CreateCustomerDto) {
+  async create(@Req() req: AuthRequest, @Body() dto: CreateCustomerLocalDto) {
     return this.customers.create(req.user!.sub, dto);
   }
 
@@ -69,7 +69,7 @@ export class CustomersController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar customer' })
-  async update(@Req() req: AuthRequest, @Param('id') id: string, @Body() dto: UpdateCustomerDto) {
+  async update(@Req() req: AuthRequest, @Param('id') id: string, @Body() dto: UpdateCustomerLocalDto) {
     const current = await this.customers.findById(id);
     if (req.user!.role !== Role.ADMIN && req.user!.sub !== (current as any).userId) {
       throw new ForbiddenException('Acesso negado');

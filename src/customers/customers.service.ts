@@ -6,10 +6,11 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCustomerDto, CustomerType } from './dto/create-customer.dto';
-import { UpdateCustomerDto } from './dto/update-customer.dto';
+
 import { QueryCustomersDto } from './dto/query-customers.dto';
 import { CustomerResponse, PaginatedCustomersResponse } from './dto/responses/customer.response';
+import { CreateCustomerLocalDto } from './dto/create-customer-local.dto';
+import { UpdateCustomerLocalDto } from './dto/update-customer-local.dto';
 
 @Injectable()
 export class CustomersService {
@@ -19,8 +20,8 @@ export class CustomersService {
 
   /**
    * 📝 Criar customer (PF ou PJ)
-   */
-  async create(userId: string, dto: CreateCustomerDto): Promise<CustomerResponse> {
+   * */
+  async create(userId: string, dto: CreateCustomerLocalDto): Promise<CustomerResponse> {
     this.logger.log(`📝 Criando customer tipo ${dto.type} para user ${userId}`);
 
     await this.validateUniqueness(dto);
@@ -145,7 +146,7 @@ export class CustomersService {
   /**
    * ✏️ Atualizar customer
    */
-  async update(id: string, dto: UpdateCustomerDto): Promise<CustomerResponse> {
+  async update(id: string, dto: UpdateCustomerLocalDto): Promise<CustomerResponse> {
     await this.findById(id); // garante que existe
 
     const customer = await this.prisma.customer.update({
@@ -182,7 +183,7 @@ export class CustomersService {
   /**
    * 🔒 Validar unicidade (CPF, CNPJ, Email)
    */
-  private async validateUniqueness(dto: CreateCustomerDto): Promise<void> {
+  private async validateUniqueness(dto: CreateCustomerLocalDto): Promise<void> {
     const where: any[] = [{ email: dto.email }];
 
     if (dto.cpf) where.push({ cpf: dto.cpf });

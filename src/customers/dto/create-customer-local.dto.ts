@@ -18,7 +18,7 @@ export enum CustomerType {
     PJ = 'PJ',
 }
 
-export class CreateCustomerDto {
+export class CreateCustomerLocalDto {
     @ApiProperty({ enum: CustomerType, example: 'PF' })
     @IsEnum(CustomerType)
     type: CustomerType;

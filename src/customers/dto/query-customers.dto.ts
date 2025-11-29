@@ -1,8 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsOptional, IsString, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CustomerType } from './create-customer.dto';
-import { AccountStatus } from './update-customer.dto';
+import { CustomerType } from './create-customer-local.dto';
+import { AccountStatus } from './update-customer-local.dto';
 
 export class QueryCustomersDto {
     @ApiPropertyOptional({ example: 1, minimum: 1 })
