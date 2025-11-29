@@ -1,21 +1,6 @@
 {
   "$schema": "https://cdn.scalar.com/schema/scalar-config.json",
   "subdomain": "otsem-api",
-  "guides": [
-    {
-      "name": "OTSEM API Documentation",
-      "sidebar": [
-        {
-          "path": "docs/introduction.md",
-          "type": "page"
-        },
-        {
-          "path": "docs/customer-create.md",
-          "type": "page"
-        }
-      ]
-    }
-  ],
   "references": [
     {
       "type": "openapi",
