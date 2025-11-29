@@ -1,0 +1,7 @@
+openapi:
+  - ./openapi.json
+
+info:
+  title: Minha API FD Bank
+  description: Documentação gerada automaticamente via OpenAPI e Scalar.
+  version: 1.0.0
