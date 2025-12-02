@@ -24,7 +24,7 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('invalid_credentials');
-    const ok = await bcrypt.compare(password, user.passwordHash);
+    const ok = await bcrypt.compare(password, user.password);
     if (!ok) throw new UnauthorizedException('invalid_credentials');
 
     // Busca o customer vinculado ao usuário
@@ -107,9 +107,15 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
-        passwordHash: hash,
+        password: hash,
         name: dto.name,
         role: Role.CUSTOMER,
+        kycStatus: 'not_started',
+        has2FA: false,
+        hasBiometric: false,
+        hasPin: false,
+        preferredCurrency: 'USD',
+        notificationsEnabled: true,
       },
       select: { id: true, email: true, role: true },
     });
@@ -137,13 +143,54 @@ export class AuthService {
       console.error('Erro ao criar account:', err);
     }
 
+    // Gera tokens
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
     };
-    const access_token = await this.jwt.signAsync(payload);
-    return { access_token, role: user.role };
+    const accessToken = await this.jwt.signAsync({ userId: user.id, email: user.email, type: 'access' }, { expiresIn: '15m' });
+    const refreshToken = await this.jwt.signAsync({ userId: user.id, email: user.email, type: 'refresh' }, { expiresIn: '7d' });
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        token: refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    // Busca dados completos do usuário
+    const fullUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true,
+        profileImage: true,
+        address: true,
+        createdAt: true,
+        kycStatus: true,
+        has2FA: true,
+        hasBiometric: true,
+        hasPin: true,
+        preferredCurrency: true,
+        notificationsEnabled: true,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        user: {
+          ...fullUser,
+          createdAt: fullUser?.createdAt?.getTime() ?? null,
+        },
+        accessToken,
+        refreshToken,
+      },
+    };
   }
 
   async requestPasswordReset(email: string) {
@@ -194,7 +241,7 @@ export class AuthService {
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: rec.userId },
-        data: { passwordHash: hash }, // <--- AQUI estava o bug: antes era { password: newPassword }
+        data: { password: hash }, // <--- AQUI estava o bug: antes era { password: newPassword }
       }),
       this.prisma.passwordResetToken.update({
         where: { id: rec.id },

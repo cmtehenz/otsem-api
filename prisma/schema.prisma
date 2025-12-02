@@ -120,18 +120,26 @@ enum TransactionStatus {
 // ==================== AUTH ====================
 
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  passwordHash      String    @map("password")
-  name              String?
-  role              Role      @default(ADMIN)
-  isActive          Boolean   @default(true)
-  passwordChangedAt DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  password             String
+  name                 String?
+  phone                String?
+  profileImage         String? // <--- Adicione este campo
+  address              String?
+  createdAt            DateTime  @default(now())
+  kycStatus            String?
+  has2FA               Boolean   @default(false)
+  hasBiometric         Boolean   @default(false)
+  hasPin               Boolean   @default(false)
+  preferredCurrency    String?   @default("USD")
+  notificationsEnabled Boolean   @default(true)
+  passwordChangedAt    DateTime?
+  role                 Role      @default(CUSTOMER) // <--- Adicione este campo
 
   customers           Customer[]
   passwordResetTokens PasswordResetToken[]
+  refreshTokens       RefreshToken[]
 }
 
 model PasswordResetToken {
@@ -146,6 +154,19 @@ model PasswordResetToken {
 
   @@index([userId])
   @@index([tokenHash])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ==================== CUSTOMER ====================
