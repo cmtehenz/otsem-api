@@ -29,6 +29,7 @@ export class OkxController {
     }) {
         // Rede fixa como SOL para Solana
         return await this.okxService.withdrawUsdt({
+            currency: 'USDT',
             amount: body.amount,
             toAddress: body.toAddress,
             network: 'Solana',
@@ -36,4 +37,5 @@ export class OkxController {
             fee: body.fee
         });
     }
+
 }

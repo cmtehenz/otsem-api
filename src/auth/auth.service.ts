@@ -11,7 +11,7 @@ import { Role } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
 
 const SALT_ROUNDS = 10;
-type JwtPayload = { sub: string; email: string; role: Role };
+type JwtPayload = { sub: string; email: string; role: Role; customerId?: string };
 
 @Injectable()
 export class AuthService {
@@ -48,6 +48,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      customerId: (user as any).customerId,
     };
     const accessToken = await this.jwt.signAsync(payload, { expiresIn: '15m' });
 

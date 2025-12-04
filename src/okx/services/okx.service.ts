@@ -20,6 +20,7 @@ interface OkxApiResponse {
 }
 
 interface WithdrawUsdtParams {
+    currency: string;
     amount: string | number;
     toAddress: string;
     network: string; // exemplo: 'SOL', 'ERC20', 'TRC20'
@@ -188,8 +189,8 @@ export class OkxService {
         const bodyObj = {
             ccy: 'BRL',
             amt: amount.toString(),
-            from: 6,   // 6 = funding
-            to: 18     // 18 = trading
+            from: 18,   // 6 = funding
+            to: 6     // 18 = trading
         };
         const body = JSON.stringify(bodyObj);
         const headers = this.authService.getAuthHeaders(method, requestPath, body);
@@ -200,13 +201,13 @@ export class OkxService {
     }
 
     async safeWithdrawUsdt(params: WithdrawUsdtParams) {
-        // 1. Transfere USDT da conta funding para trading
-        await this.transferUsdtToTrading(params.amount);
+        // 2. Transfere USDT da conta trading para funding
+        await this.transferFromTradingToFunding(params.currency, params.amount);
 
-        // 2. Aguarda alguns segundos para garantir o processamento
+        // 3. Aguarda alguns segundos para garantir o processamento
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // 3. Realiza o saque normalmente
+        // 4. Realiza o saque normalmente
         return this.withdrawUsdt(params);
     }
 
@@ -236,5 +237,22 @@ export class OkxService {
         const details = response.data[0]?.details || [];
         const asset = details.find((d: any) => d.ccy === currency);
         return asset ? asset.availBal : '0';
+    }
+
+    async transferFromTradingToFunding(currency: string, amount: string | number) {
+        const method = 'POST';
+        const requestPath = '/api/v5/asset/transfer';
+        const bodyObj = {
+            ccy: currency,
+            amt: amount.toString(),
+            from: 18, // trading
+            to: 6     // funding
+        };
+        const body = JSON.stringify(bodyObj);
+        const headers = this.authService.getAuthHeaders(method, requestPath, body);
+        const apiUrl = process.env.OKX_API_URL || 'https://www.okx.com';
+
+        const response = await axios.post(`${apiUrl}${requestPath}`, bodyObj, { headers });
+        return response.data;
     }
 }
