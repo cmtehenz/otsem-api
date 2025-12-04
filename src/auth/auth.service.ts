@@ -80,6 +80,7 @@ export class AuthService {
         hasBiometric: true,
         hasPin: true,
         role: true,
+        spreadValue: true,
         preferredCurrency: true,
         notificationsEnabled: true,
       },

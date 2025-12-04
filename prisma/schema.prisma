@@ -134,6 +134,7 @@ model User {
   hasPin               Boolean   @default(false)
   preferredCurrency    String?   @default("USD")
   notificationsEnabled Boolean   @default(true)
+  spreadValue          Decimal?  @default(0.95) @db.Decimal(5, 2)
   passwordChangedAt    DateTime?
   role                 Role      @default(CUSTOMER) // <--- Adicione este campo
 
