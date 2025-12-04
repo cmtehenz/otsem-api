@@ -27,4 +27,9 @@ export class WalletController {
         const customerId = (req.user as any).customerId;
         return await this.walletService.getAllUsdtWalletsForCustomer(customerId);
     }
+
+    @Get('teste-balance')
+    async getBalance() {
+        return 0;
+    }
 }

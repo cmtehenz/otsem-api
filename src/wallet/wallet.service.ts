@@ -61,8 +61,9 @@ export class WalletService {
             let saldo = 0;
             for (const acc of tokenAccounts.value) {
                 const info = acc.account.data.parsed.info;
-                // Mint USDT SPL
-                if (info.mint === 'Es9vMFrzaCERcKjQ6tG1pQ6v5yF7z4d6h6t6z6t6z6t6') {
+                console.log('Token encontrado:', info.mint, 'Saldo:', info.tokenAmount.amount);
+                // Mint USDT SPL (corrigido para o mint completo)
+                if (info.mint === 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB') {
                     saldo += Number(info.tokenAmount.amount);
                 }
             }

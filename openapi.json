@@ -1375,6 +1375,20 @@
         ]
       }
     },
+    "/wallet/teste-balance": {
+      "get": {
+        "operationId": "WalletController_getBalance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/pix-keys/customer/{customerId}": {
       "get": {
         "operationId": "PixKeysController_getKeysByCustomer",
