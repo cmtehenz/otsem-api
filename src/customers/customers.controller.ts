@@ -54,6 +54,13 @@ export class CustomersController {
     return this.customers.findByUserId(req.user!.sub);
   }
 
+  @Patch('me')
+  @ApiOperation({ summary: 'Atualizar meu customer' })
+  async updateMe(@Req() req: AuthRequest, @Body() dto: UpdateCustomerLocalDto) {
+    const customer = await this.customers.findByUserId(req.user!.sub);
+    return this.customers.update(customer.id, dto);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Criar customer' })
   async create(@Req() req: AuthRequest, @Body() dto: CreateCustomerLocalDto) {

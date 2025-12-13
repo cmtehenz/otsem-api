@@ -375,6 +375,34 @@
         "tags": [
           "Customers"
         ]
+      },
+      "patch": {
+        "operationId": "CustomersController_updateMe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerLocalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualizar meu customer",
+        "tags": [
+          "Customers"
+        ]
       }
     },
     "/customers/{id}": {
@@ -2782,6 +2810,67 @@
         "type": "object",
         "properties": {}
       },
+      "UpdateCustomerLocalDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "João Silva"
+          },
+          "email": {
+            "type": "string",
+            "example": "joao@email.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+5511999999999"
+          },
+          "birthday": {
+            "type": "string",
+            "example": "1990-01-15"
+          },
+          "rg": {
+            "type": "string",
+            "example": "123456789"
+          },
+          "mothersName": {
+            "type": "string",
+            "example": "João Silva"
+          },
+          "companyName": {
+            "type": "string",
+            "example": "Empresa LTDA"
+          },
+          "tradingName": {
+            "type": "string",
+            "example": "Empresa"
+          },
+          "foundingDate": {
+            "type": "string",
+            "example": "2020-01-01"
+          },
+          "address": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "metadata": {
+            "type": "object",
+            "example": {
+              "referralCode": "XYZ123"
+            }
+          },
+          "accountStatus": {
+            "type": "string",
+            "enum": [
+              "not_requested",
+              "requested",
+              "in_review",
+              "approved",
+              "rejected",
+              "suspended"
+            ]
+          }
+        }
+      },
       "CreateCustomerLocalDto": {
         "type": "object",
         "properties": {
@@ -2852,67 +2941,6 @@
           "name",
           "email"
         ]
-      },
-      "UpdateCustomerLocalDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "João Silva"
-          },
-          "email": {
-            "type": "string",
-            "example": "joao@email.com"
-          },
-          "phone": {
-            "type": "string",
-            "example": "+5511999999999"
-          },
-          "birthday": {
-            "type": "string",
-            "example": "1990-01-15"
-          },
-          "rg": {
-            "type": "string",
-            "example": "123456789"
-          },
-          "mothersName": {
-            "type": "string",
-            "example": "João Silva"
-          },
-          "companyName": {
-            "type": "string",
-            "example": "Empresa LTDA"
-          },
-          "tradingName": {
-            "type": "string",
-            "example": "Empresa"
-          },
-          "foundingDate": {
-            "type": "string",
-            "example": "2020-01-01"
-          },
-          "address": {
-            "$ref": "#/components/schemas/AddressDto"
-          },
-          "metadata": {
-            "type": "object",
-            "example": {
-              "referralCode": "XYZ123"
-            }
-          },
-          "accountStatus": {
-            "type": "string",
-            "enum": [
-              "not_requested",
-              "requested",
-              "in_review",
-              "approved",
-              "rejected",
-              "suspended"
-            ]
-          }
-        }
       },
       "DiditWebhookPayloadDto": {
         "type": "object",
