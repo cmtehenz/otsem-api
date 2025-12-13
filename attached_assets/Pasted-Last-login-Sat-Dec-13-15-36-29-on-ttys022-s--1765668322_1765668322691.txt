@@ -1,0 +1,302 @@
+Last login: Sat Dec 13 15:36:29 on ttys022
+s%                                                                              gustavo in otsem-api on  main 
+➜  ssh deploy@142.93.13.71
+
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 5.15.0-163-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Sat Dec 13 15:47:20 -03 2025
+
+  System load:  0.02               Processes:             96
+  Usage of /:   19.3% of 24.05GB   Users logged in:       0
+  Memory usage: 21%                IPv4 address for eth0: 142.93.13.71
+  Swap usage:   0%                 IPv4 address for eth0: 10.10.0.5
+
+Expanded Security Maintenance for Applications is not enabled.
+
+4 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+1 additional security update can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+*** System restart required ***
+Last login: Wed Dec  3 13:33:57 2025 from 170.247.144.0
+deploy@otsem-api:~$ pm2 logs
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/home/deploy/.pm2/pm2.log last 15 lines:
+PM2        | 2025-12-06T00:29:17: PM2 log: App [otsem-api:0] online
+PM2        | 2025-12-07T00:29:18: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-07T00:29:18: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-08T00:29:18: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-08T00:29:18: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-09T00:29:18: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-09T00:29:18: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-10T00:29:18: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-10T00:29:18: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-11T00:29:18: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-11T00:29:18: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-12T00:29:18: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-12T00:29:18: PM2 log: [PM2] Upgrade to version 6.0.14
+PM2        | 2025-12-13T00:29:18: PM2 log: [PM2] This PM2 is not UP TO DATE
+PM2        | 2025-12-13T00:29:18: PM2 log: [PM2] Upgrade to version 6.0.14
+
+/home/deploy/.pm2/logs/otsem-api-out-0.log last 15 lines:
+0|otsem-ap | 2025-12-13T15:40:00: [Nest] 921  - 12/13/2025, 3:40:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-ap | 2025-12-13T15:41:00: [Nest] 921  - 12/13/2025, 3:41:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T15:41:00: [Nest] 921  - 12/13/2025, 3:41:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-ap | 2025-12-13T15:42:00: [Nest] 921  - 12/13/2025, 3:42:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T15:42:00: [Nest] 921  - 12/13/2025, 3:42:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-ap | 2025-12-13T15:43:00: [Nest] 921  - 12/13/2025, 3:43:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T15:43:00: [Nest] 921  - 12/13/2025, 3:43:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-ap | 2025-12-13T15:44:00: [Nest] 921  - 12/13/2025, 3:44:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T15:44:00: [Nest] 921  - 12/13/2025, 3:44:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-ap | 2025-12-13T15:45:00: [Nest] 921  - 12/13/2025, 3:45:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T15:45:00: [Nest] 921  - 12/13/2025, 3:45:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-ap | 2025-12-13T15:46:00: [Nest] 921  - 12/13/2025, 3:46:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T15:46:00: [Nest] 921  - 12/13/2025, 3:46:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-ap | 2025-12-13T15:47:00: [Nest] 921  - 12/13/2025, 3:47:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T15:47:00: [Nest] 921  - 12/13/2025, 3:47:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+
+/home/deploy/.pm2/logs/otsem-api-error-0.log last 15 lines:
+0|otsem-ap | 2025-12-13T15:46:58: [Nest] 921  - 12/13/2025, 3:46:58 PM   ERROR [ExceptionsHandler] Error: CORS blocked
+0|otsem-ap | 2025-12-13T15:46:58:     at origin (/var/www/otsem-api/src/main.ts:21:17)
+0|otsem-ap | 2025-12-13T15:46:58:     at /var/www/otsem-api/node_modules/cors/lib/index.js:219:13
+0|otsem-ap | 2025-12-13T15:46:58:     at optionsCallback (/var/www/otsem-api/node_modules/cors/lib/index.js:199:9)
+0|otsem-ap | 2025-12-13T15:46:58:     at corsMiddleware (/var/www/otsem-api/node_modules/cors/lib/index.js:204:7)
+0|otsem-ap | 2025-12-13T15:46:58:     at Layer.handleRequest (/var/www/otsem-api/node_modules/router/lib/layer.js:152:17)
+0|otsem-ap | 2025-12-13T15:46:58:     at trimPrefix (/var/www/otsem-api/node_modules/router/index.js:342:13)
+0|otsem-ap | 2025-12-13T15:46:58:     at /var/www/otsem-api/node_modules/router/index.js:297:9
+0|otsem-ap | 2025-12-13T15:46:58:     at processParams (/var/www/otsem-api/node_modules/router/index.js:582:12)
+0|otsem-ap | 2025-12-13T15:46:58:     at next (/var/www/otsem-api/node_modules/router/index.js:291:5)
+0|otsem-ap | 2025-12-13T15:46:58:     at /var/www/otsem-api/node_modules/@nestjs/platform-express/adapters/express-adapter.js:34:17
+0|otsem-ap | 2025-12-13T15:47:00: [Nest] 921  - 12/13/2025, 3:47:00 PM   ERROR [InterPixService] ❌ Erro ao buscar/processar Pix recebidos:
+0|otsem-ap | 2025-12-13T15:47:00: Request failed with status code 401
+0|otsem-ap | 2025-12-13T15:47:00: [Nest] 921  - 12/13/2025, 3:47:00 PM   ERROR [InterPixService] Detalhes:
+0|otsem-ap | 2025-12-13T15:47:00: {"title":"Acesso negado","detail":"O certificado desta aplicação expirou ou foi revogado. Crie nova aplicação pelo Internet Banking para gerar um certificado válido.","timestamp":"2025-12-13T15:47:00.528537372-03:00"}
+
+^C
+deploy@otsem-api:~$ pm2 list
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ otsem-api          │ fork     │ 0    │ online    │ 0%       │ 143.5mb  │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+deploy@otsem-api:~$ Read from remote host 142.93.13.71: Operation timed out
+Connection to 142.93.13.71 closed.
+client_loop: send disconnect: Broken pipe
+gustavo in otsem-api on  main [!] took 2h 11m 42,0s 
+➜  ssh deploy@142.93.13.71
+
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 5.15.0-163-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Sat Dec 13 20:22:26 -03 2025
+
+  System load:  0.16               Processes:             105
+  Usage of /:   19.3% of 24.05GB   Users logged in:       0
+  Memory usage: 20%                IPv4 address for eth0: 142.93.13.71
+  Swap usage:   0%                 IPv4 address for eth0: 10.10.0.5
+
+Expanded Security Maintenance for Applications is not enabled.
+
+4 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+1 additional security update can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+New release '24.04.3 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+*** System restart required ***
+Last login: Sat Dec 13 18:42:40 2025 from 45.231.1.94
+deploy@otsem-api:~$ pm2 logs
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/home/deploy/.pm2/pm2.log last 15 lines:
+PM2        | 2025-12-13T20:08:02: PM2 log: pid=142860 msg=process killed
+PM2        | 2025-12-13T20:08:02: PM2 log: App [otsem-api:0] starting in -fork mode-
+PM2        | 2025-12-13T20:08:02: PM2 log: App [otsem-api:0] online
+PM2        | 2025-12-13T20:18:09: PM2 log: Process 0 in a stopped status, starting it
+PM2        | 2025-12-13T20:18:09: PM2 log: Stopping app:otsem-api id:0
+PM2        | 2025-12-13T20:18:09: PM2 log: App [otsem-api:0] exited with code [0] via signal [SIGINT]
+PM2        | 2025-12-13T20:18:09: PM2 log: pid=144007 msg=process killed
+PM2        | 2025-12-13T20:18:09: PM2 log: App [otsem-api:0] starting in -fork mode-
+PM2        | 2025-12-13T20:18:09: PM2 log: App [otsem-api:0] online
+PM2        | 2025-12-13T20:20:40: PM2 log: Process 0 in a stopped status, starting it
+PM2        | 2025-12-13T20:20:40: PM2 log: Stopping app:otsem-api id:0
+PM2        | 2025-12-13T20:20:40: PM2 log: App [otsem-api:0] exited with code [0] via signal [SIGINT]
+PM2        | 2025-12-13T20:20:41: PM2 log: pid=144736 msg=process killed
+PM2        | 2025-12-13T20:20:41: PM2 log: App [otsem-api:0] starting in -fork mode-
+PM2        | 2025-12-13T20:20:41: PM2 log: App [otsem-api:0] online
+
+/home/deploy/.pm2/logs/otsem-api-out-0.log last 15 lines:
+0|otsem-ap | 2025-12-13T20:20:43: [Nest] 145368  - 12/13/2025, 8:20:43 PM     LOG [RoutesResolver] PaymentsController {/payments}: +0ms
+0|otsem-ap | 2025-12-13T20:20:43: [Nest] 145368  - 12/13/2025, 8:20:43 PM     LOG [RouterExplorer] Mapped {/payments, GET} route +1ms
+0|otsem-ap | 2025-12-13T20:20:43: [Nest] 145368  - 12/13/2025, 8:20:43 PM     LOG [RoutesResolver] TransactionsController {/transactions}: +0ms
+0|otsem-ap | 2025-12-13T20:20:43: [Nest] 145368  - 12/13/2025, 8:20:43 PM     LOG [RouterExplorer] Mapped {/transactions/:id, GET} route +1ms
+0|otsem-ap | 2025-12-13T20:20:43: [Nest] 145368  - 12/13/2025, 8:20:43 PM     LOG [RouterExplorer] Mapped {/transactions/:id/reverse, POST} route +0ms
+0|otsem-ap | 2025-12-13T20:20:47: [Nest] 145368  - 12/13/2025, 8:20:47 PM     LOG [NestApplication] Nest application successfully started +4112ms
+0|otsem-ap | 2025-12-13T20:20:47: 🚀 Application is running on: http://localhost:3333
+0|otsem-ap | 2025-12-13T20:20:47: 📚 Scalar docs available at: http://localhost:3333/api/docs
+0|otsem-ap | 2025-12-13T20:20:47: 📚 Swagger UI available at: http://localhost:3333/api/swagger
+0|otsem-ap | 2025-12-13T20:21:00: [Nest] 145368  - 12/13/2025, 8:21:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T20:21:00: [Nest] 145368  - 12/13/2025, 8:21:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-ap | 2025-12-13T20:21:00: [Nest] 145368  - 12/13/2025, 8:21:00 PM     LOG [InterAuthService] 🔐 Novo token OAuth 2.0
+0|otsem-ap | 2025-12-13T20:21:00: [Nest] 145368  - 12/13/2025, 8:21:00 PM     LOG [InterAuthService] ✅ Token obtido
+0|otsem-ap | 2025-12-13T20:22:00: [Nest] 145368  - 12/13/2025, 8:22:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-ap | 2025-12-13T20:22:00: [Nest] 145368  - 12/13/2025, 8:22:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+
+/home/deploy/.pm2/logs/otsem-api-error-0.log last 15 lines:
+0|otsem-ap | 2025-12-13T20:21:52: Unknown argument `zipCode`. Available options are marked with ?.
+0|otsem-ap | 2025-12-13T20:21:52:     at throwValidationException (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+0|otsem-ap | 2025-12-13T20:21:52:     at ei.handleRequestError (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+0|otsem-ap | 2025-12-13T20:21:52:     at ei.handleAndLogRequestError (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+0|otsem-ap | 2025-12-13T20:21:52:     at ei.request (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+0|otsem-ap | 2025-12-13T20:21:52:     at a (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+0|otsem-ap | 2025-12-13T20:21:52:     at CustomersService.update (/var/www/otsem-api/src/customers/customers.service.ts:152:22)
+0|otsem-ap | 2025-12-13T20:21:52:     at /var/www/otsem-api/node_modules/@nestjs/core/router/router-execution-context.js:46:28
+0|otsem-ap | 2025-12-13T20:21:52:     at /var/www/otsem-api/node_modules/@nestjs/core/router/router-proxy.js:9:17 {
+0|otsem-ap | 2025-12-13T20:21:52:   clientVersion: '6.18.0'
+0|otsem-ap | 2025-12-13T20:21:52: }
+0|otsem-ap | 2025-12-13T20:22:00: [Nest] 145368  - 12/13/2025, 8:22:00 PM   ERROR [InterPixService] ❌ Erro ao buscar/processar Pix recebidos:
+0|otsem-ap | 2025-12-13T20:22:00: Request failed with status code 401
+0|otsem-ap | 2025-12-13T20:22:00: [Nest] 145368  - 12/13/2025, 8:22:00 PM   ERROR [InterPixService] Detalhes:
+0|otsem-ap | 2025-12-13T20:22:00: {"title":"Acesso negado","detail":"O certificado desta aplicação expirou ou foi revogado. Crie nova aplicação pelo Internet Banking para gerar um certificado válido.","timestamp":"2025-12-13T20:22:00.512365315-03:00"}
+
+^C
+deploy@otsem-api:~$ cd /var/www/
+deploy@otsem-api:/var/www$ ls
+html  otsem-api
+deploy@otsem-api:/var/www$ cd otsem-api/
+deploy@otsem-api:/var/www/otsem-api$ ls
+README.md  ecosystem.config.js  inter-keys     node_modules  package-lock.json  prisma  test                 tsconfig.json
+dist       eslint.config.mjs    nest-cli.json  openapi.json  package.json       src     tsconfig.build.json
+deploy@otsem-api:/var/www/otsem-api$ nano .env 
+deploy@otsem-api:/var/www/otsem-api$ pm2 reload
+
+  error: missing required argument `id|name|namespace|all'
+
+deploy@otsem-api:/var/www/otsem-api$ pm2 reload 0
+Use --update-env to update environment variables
+[PM2] Applying action reloadProcessId on app [0](ids: [ '0' ])
+[PM2] [otsem-api](0) ✓
+deploy@otsem-api:/var/www/otsem-api$ pm2 logs
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/home/deploy/.pm2/pm2.log last 15 lines:
+PM2        | 2025-12-13T20:18:09: PM2 log: pid=144007 msg=process killed
+PM2        | 2025-12-13T20:18:09: PM2 log: App [otsem-api:0] starting in -fork mode-
+PM2        | 2025-12-13T20:18:09: PM2 log: App [otsem-api:0] online
+PM2        | 2025-12-13T20:20:40: PM2 log: Process 0 in a stopped status, starting it
+PM2        | 2025-12-13T20:20:40: PM2 log: Stopping app:otsem-api id:0
+PM2        | 2025-12-13T20:20:40: PM2 log: App [otsem-api:0] exited with code [0] via signal [SIGINT]
+PM2        | 2025-12-13T20:20:41: PM2 log: pid=144736 msg=process killed
+PM2        | 2025-12-13T20:20:41: PM2 log: App [otsem-api:0] starting in -fork mode-
+PM2        | 2025-12-13T20:20:41: PM2 log: App [otsem-api:0] online
+PM2        | 2025-12-13T20:24:03: PM2 log: Process 0 in a stopped status, starting it
+PM2        | 2025-12-13T20:24:03: PM2 log: Stopping app:otsem-api id:0
+PM2        | 2025-12-13T20:24:03: PM2 log: App [otsem-api:0] exited with code [0] via signal [SIGINT]
+PM2        | 2025-12-13T20:24:03: PM2 log: pid=145368 msg=process killed
+PM2        | 2025-12-13T20:24:03: PM2 log: App [otsem-api:0] starting in -fork mode-
+PM2        | 2025-12-13T20:24:03: PM2 log: App [otsem-api:0] online
+
+/home/deploy/.pm2/logs/otsem-api-error-0.log last 15 lines:
+0|otsem-ap | 2025-12-13T20:21:52:     at /var/www/otsem-api/node_modules/@nestjs/core/router/router-proxy.js:9:17 {
+0|otsem-ap | 2025-12-13T20:21:52:   clientVersion: '6.18.0'
+0|otsem-ap | 2025-12-13T20:21:52: }
+0|otsem-ap | 2025-12-13T20:22:00: [Nest] 145368  - 12/13/2025, 8:22:00 PM   ERROR [InterPixService] ❌ Erro ao buscar/processar Pix recebidos:
+0|otsem-ap | 2025-12-13T20:22:00: Request failed with status code 401
+0|otsem-ap | 2025-12-13T20:22:00: [Nest] 145368  - 12/13/2025, 8:22:00 PM   ERROR [InterPixService] Detalhes:
+0|otsem-ap | 2025-12-13T20:22:00: {"title":"Acesso negado","detail":"O certificado desta aplicação expirou ou foi revogado. Crie nova aplicação pelo Internet Banking para gerar um certificado válido.","timestamp":"2025-12-13T20:22:00.512365315-03:00"}
+0|otsem-ap | 2025-12-13T20:23:00: [Nest] 145368  - 12/13/2025, 8:23:00 PM   ERROR [InterPixService] ❌ Erro ao buscar/processar Pix recebidos:
+0|otsem-ap | 2025-12-13T20:23:00: Request failed with status code 401
+0|otsem-ap | 2025-12-13T20:23:00: [Nest] 145368  - 12/13/2025, 8:23:00 PM   ERROR [InterPixService] Detalhes:
+0|otsem-ap | 2025-12-13T20:23:00: {"title":"Acesso negado","detail":"O certificado desta aplicação expirou ou foi revogado. Crie nova aplicação pelo Internet Banking para gerar um certificado válido.","timestamp":"2025-12-13T20:23:00.507843221-03:00"}
+0|otsem-ap | 2025-12-13T20:24:00: [Nest] 145368  - 12/13/2025, 8:24:00 PM   ERROR [InterPixService] ❌ Erro ao buscar/processar Pix recebidos:
+0|otsem-ap | 2025-12-13T20:24:00: Request failed with status code 401
+0|otsem-ap | 2025-12-13T20:24:00: [Nest] 145368  - 12/13/2025, 8:24:00 PM   ERROR [InterPixService] Detalhes:
+0|otsem-ap | 2025-12-13T20:24:00: {"title":"Acesso negado","detail":"O certificado desta aplicação expirou ou foi revogado. Crie nova aplicação pelo Internet Banking para gerar um certificado válido.","timestamp":"2025-12-13T20:24:00.508530666-03:00"}
+
+/home/deploy/.pm2/logs/otsem-api-out-0.log last 15 lines:
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RoutesResolver] AdminDashboardController {/admin/dashboard}: +1ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RouterExplorer] Mapped {/admin/dashboard/stats, GET} route +4ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RouterExplorer] Mapped {/admin/dashboard/summary, GET} route +1ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RouterExplorer] Mapped {/admin/dashboard/inter-balance, GET} route +1ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RouterExplorer] Mapped {/admin/dashboard/latest-users, GET} route +0ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RouterExplorer] Mapped {/admin/dashboard/latest-transactions, GET} route +1ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RoutesResolver] PaymentsController {/payments}: +0ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RouterExplorer] Mapped {/payments, GET} route +1ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RoutesResolver] TransactionsController {/transactions}: +0ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RouterExplorer] Mapped {/transactions/:id, GET} route +1ms
+0|otsem-ap | 2025-12-13T20:24:05: [Nest] 145535  - 12/13/2025, 8:24:05 PM     LOG [RouterExplorer] Mapped {/transactions/:id/reverse, POST} route +0ms
+0|otsem-ap | 2025-12-13T20:24:09: [Nest] 145535  - 12/13/2025, 8:24:09 PM     LOG [NestApplication] Nest application successfully started +4137ms
+0|otsem-ap | 2025-12-13T20:24:09: 🚀 Application is running on: http://localhost:3333
+0|otsem-ap | 2025-12-13T20:24:09: 📚 Scalar docs available at: http://localhost:3333/api/docs
+0|otsem-ap | 2025-12-13T20:24:09: 📚 Swagger UI available at: http://localhost:3333/api/swagger
+
+0|otsem-api  | 2025-12-13T20:25:00: [Nest] 145535  - 12/13/2025, 8:25:00 PM     LOG [InterPixPollingTask] 🔄 Consultando Pix recebidos via polling...
+0|otsem-api  | 2025-12-13T20:25:00: [Nest] 145535  - 12/13/2025, 8:25:00 PM     LOG [InterPixService] 🔄 Buscando Pix recebidos via API do Inter...
+0|otsem-api  | 2025-12-13T20:25:00: [Nest] 145535  - 12/13/2025, 8:25:00 PM     LOG [InterAuthService] 🔐 Novo token OAuth 2.0
+0|otsem-api  | 2025-12-13T20:25:00: [Nest] 145535  - 12/13/2025, 8:25:00 PM     LOG [InterAuthService] ✅ Token obtido
+0|otsem-api  | 2025-12-13T20:25:01: [Nest] 145535  - 12/13/2025, 8:25:01 PM   ERROR [InterPixService] ❌ Erro ao buscar/processar Pix recebidos:
+0|otsem-api  | 2025-12-13T20:25:01: Request failed with status code 401
+0|otsem-api  | 2025-12-13T20:25:01: [Nest] 145535  - 12/13/2025, 8:25:01 PM   ERROR [InterPixService] Detalhes:
+0|otsem-api  | 2025-12-13T20:25:01: {"title":"Acesso negado","detail":"O certificado desta aplicação expirou ou foi revogado. Crie nova aplicação pelo Internet Banking para gerar um certificado válido.","timestamp":"2025-12-13T20:25:01.167438599-03:00"}
+0|otsem-api  | 2025-12-13T20:25:02: [Nest] 145535  - 12/13/2025, 8:25:02 PM   ERROR [ExceptionsHandler] PrismaClientValidationError: 
+0|otsem-api  | 2025-12-13T20:25:02: Invalid `prisma.customer.update()` invocation:
+0|otsem-api  | 2025-12-13T20:25:02: 
+0|otsem-api  | 2025-12-13T20:25:02: {
+0|otsem-api  | 2025-12-13T20:25:02:   where: {
+0|otsem-api  | 2025-12-13T20:25:02:     id: "572aac8c-949e-40d5-8b87-66cc164e9000"
+0|otsem-api  | 2025-12-13T20:25:02:   },
+0|otsem-api  | 2025-12-13T20:25:02:   data: {
+0|otsem-api  | 2025-12-13T20:25:02:     name: "Gustavo Altevir da Costa",
+0|otsem-api  | 2025-12-13T20:25:02:     email: undefined,
+0|otsem-api  | 2025-12-13T20:25:02:     phone: "47988160462",
+0|otsem-api  | 2025-12-13T20:25:02:     birthday: new Date("1986-03-14T00:00:00.000Z"),
+0|otsem-api  | 2025-12-13T20:25:02:     rg: undefined,
+0|otsem-api  | 2025-12-13T20:25:02:     mothersName: undefined,
+0|otsem-api  | 2025-12-13T20:25:02:     companyName: undefined,
+0|otsem-api  | 2025-12-13T20:25:02:     tradingName: undefined,
+0|otsem-api  | 2025-12-13T20:25:02:     foundingDate: undefined,
+0|otsem-api  | 2025-12-13T20:25:02:     address: {
+0|otsem-api  | 2025-12-13T20:25:02:       zipCode: "88400000",
+0|otsem-api  | 2025-12-13T20:25:02:       ~~~~~~~
+0|otsem-api  | 2025-12-13T20:25:02:       street: "rua odinei becker",
+0|otsem-api  | 2025-12-13T20:25:02:       number: "478",
+0|otsem-api  | 2025-12-13T20:25:02:       complement: undefined,
+0|otsem-api  | 2025-12-13T20:25:02:       neighborhood: "nossa ",
+0|otsem-api  | 2025-12-13T20:25:02:       cityIbgeCode: 4208500,
+0|otsem-api  | 2025-12-13T20:25:02: ?     create?: AddressCreateWithoutCustomerInput | AddressUncheckedCreateWithoutCustomerInput,
+0|otsem-api  | 2025-12-13T20:25:02: ?     connectOrCreate?: AddressCreateOrConnectWithoutCustomerInput,
+0|otsem-api  | 2025-12-13T20:25:02: ?     upsert?: AddressUpsertWithoutCustomerInput,
+0|otsem-api  | 2025-12-13T20:25:02: ?     disconnect?: Boolean | AddressWhereInput,
+0|otsem-api  | 2025-12-13T20:25:02: ?     delete?: Boolean | AddressWhereInput,
+0|otsem-api  | 2025-12-13T20:25:02: ?     connect?: AddressWhereUniqueInput,
+0|otsem-api  | 2025-12-13T20:25:02: ?     update?: AddressUpdateToOneWithWhereWithoutCustomerInput | AddressUpdateWithoutCustomerInput | AddressUncheckedUpdateWithoutCustomerInput
+0|otsem-api  | 2025-12-13T20:25:02:     },
+0|otsem-api  | 2025-12-13T20:25:02:     accountStatus: undefined,
+0|otsem-api  | 2025-12-13T20:25:02:     metadata: undefined
+0|otsem-api  | 2025-12-13T20:25:02:   }
+0|otsem-api  | 2025-12-13T20:25:02: }
+0|otsem-api  | 2025-12-13T20:25:02: 
+0|otsem-api  | 2025-12-13T20:25:02: Unknown argument `zipCode`. Available options are marked with ?.
+0|otsem-api  | 2025-12-13T20:25:02:     at throwValidationException (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:45:9)
+0|otsem-api  | 2025-12-13T20:25:02:     at ei.handleRequestError (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/RequestHandler.ts:202:7)
+0|otsem-api  | 2025-12-13T20:25:02:     at ei.handleAndLogRequestError (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+0|otsem-api  | 2025-12-13T20:25:02:     at ei.request (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+0|otsem-api  | 2025-12-13T20:25:02:     at a (/var/www/otsem-api/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:833:24)
+0|otsem-api  | 2025-12-13T20:25:02:     at CustomersService.update (/var/www/otsem-api/src/customers/customers.service.ts:152:22)
+0|otsem-api  | 2025-12-13T20:25:02:     at /var/www/otsem-api/node_modules/@nestjs/core/router/router-execution-context.js:46:28
+0|otsem-api  | 2025-12-13T20:25:02:     at /var/www/otsem-api/node_modules/@nestjs/core/router/router-proxy.js:9:17 {
+0|otsem-api  | 2025-12-13T20:25:02:   clientVersion: '6.18.0'
+0|otsem-api  | 2025-12-13T20:25:02: }
+
