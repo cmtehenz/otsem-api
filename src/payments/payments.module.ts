@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
-import { InterModule } from '../inter/inter.module';
-import { PrismaModule } from '../prisma/prisma.module'; // Adicione esta linha
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [InterModule, PrismaModule], // Adicione PrismaModule aqui
+    imports: [PrismaModule],
     controllers: [PaymentsController],
     providers: [PaymentsService],
 })

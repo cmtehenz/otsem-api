@@ -16,9 +16,11 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { CustomerBalanceService } from './customer-balance.service';
 import { CustomerKycService } from './customer-kyc.service';
-import { CreateCustomerLocalDto } from './dto/create-customer-local.dto'; // classe (valor) -> import normal
-import { UpdateCustomerLocalDto } from './dto/update-customer-local.dto';   // classe (valor) -> import normal
-import { QueryCustomersDto } from './dto/query-customers.dto';   // classe (valor) -> import normal
+import { StatementsService } from '../statements/statements.service';
+import { CreateCustomerLocalDto } from './dto/create-customer-local.dto';
+import { UpdateCustomerLocalDto } from './dto/update-customer-local.dto';
+import { QueryCustomersDto } from './dto/query-customers.dto';
+import { StatementQueryDto } from '../statements/dto/statement-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -36,6 +38,7 @@ export class CustomersController {
     private readonly customers: CustomersService,
     private readonly balances: CustomerBalanceService,
     private readonly kyc: CustomerKycService,
+    private readonly statements: StatementsService,
   ) { }
 
   @Get()
@@ -84,13 +87,13 @@ export class CustomersController {
   }
 
   @Get(':id/statement')
-  @ApiOperation({ summary: 'Extrato simplificado (delegar para statements)' })
-  async statement(@Req() req: AuthRequest, @Param('id') id: string, @Query('limit') limit?: string) {
+  @ApiOperation({ summary: 'Extrato do customer' })
+  async statement(@Req() req: AuthRequest, @Param('id') id: string, @Query() query: StatementQueryDto) {
     const customer = await this.customers.findById(id);
     if (req.user!.role !== Role.ADMIN && req.user!.sub !== (customer as any).userId) {
       throw new ForbiddenException('Acesso negado');
     }
-    return { data: [], limit: Number(limit) || 20 };
+    return this.statements.getCustomerStatement(id, query);
   }
 
   // KYC flows

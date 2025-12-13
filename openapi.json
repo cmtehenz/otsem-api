@@ -485,11 +485,106 @@
             }
           },
           {
-            "name": "limit",
-            "required": true,
+            "name": "from",
+            "required": false,
             "in": "query",
+            "description": "Data inicial (ISO 8601)",
             "schema": {
+              "example": "2025-01-01T00:00:00.000Z",
               "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Data final (ISO 8601)",
+            "schema": {
+              "example": "2025-01-31T23:59:59.999Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "Alias para \"from\" (compatibilidade)",
+            "schema": {
+              "example": "2025-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "Alias para \"to\" (compatibilidade)",
+            "schema": {
+              "example": "2025-01-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Tipo de transação",
+            "schema": {
+              "example": "PIX_IN",
+              "type": "string",
+              "enum": [
+                "DEPOSIT",
+                "WITHDRAW",
+                "TRANSFER_IN",
+                "TRANSFER_OUT",
+                "PIX_IN",
+                "PIX_OUT",
+                "FEE",
+                "REVERSAL"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Status da transação",
+            "schema": {
+              "example": "COMPLETED",
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "PROCESSING",
+                "COMPLETED",
+                "FAILED",
+                "REVERSED",
+                "CANCELED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número da página",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Limite de resultados por página",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "example": 50,
+              "type": "number"
             }
           }
         ],
@@ -503,7 +598,7 @@
             "bearer": []
           }
         ],
-        "summary": "Extrato simplificado (delegar para statements)",
+        "summary": "Extrato do customer",
         "tags": [
           "Customers"
         ]
@@ -1880,166 +1975,6 @@
         ]
       }
     },
-    "/inter/test/auth": {
-      "get": {
-        "operationId": "InterTestController_testAuth",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "🔐 Testar autenticação OAuth 2.0 (Admin)",
-        "tags": [
-          "Inter - Testes"
-        ]
-      }
-    },
-    "/inter/test/saldo": {
-      "get": {
-        "operationId": "InterTestController_testSaldo",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "💰 Testar consulta de saldo (Admin)",
-        "tags": [
-          "Inter - Testes"
-        ]
-      }
-    },
-    "/inter/test/extrato": {
-      "get": {
-        "operationId": "InterTestController_testExtrato",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "📊 Testar consulta de extrato (Admin)",
-        "tags": [
-          "Inter - Testes"
-        ]
-      }
-    },
-    "/inter/test/pix/chaves": {
-      "get": {
-        "operationId": "InterTestController_testPixKeys",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "🔑 Testar listagem de chaves Pix (Admin)",
-        "tags": [
-          "Inter - Testes"
-        ]
-      }
-    },
-    "/inter/test/pix/chave-teste": {
-      "post": {
-        "operationId": "InterTestController_testCreatePixKey",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "🔑 Criar chave Pix aleatória de teste (Admin)",
-        "tags": [
-          "Inter - Testes"
-        ]
-      }
-    },
-    "/inter/test/connection": {
-      "get": {
-        "operationId": "InterTestController_testConnection",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "🌐 Testar conexão geral com API Inter (Admin)",
-        "tags": [
-          "Inter - Testes"
-        ]
-      }
-    },
-    "/inter/test/health": {
-      "get": {
-        "operationId": "InterTestController_healthCheck",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "❤️ Health check da integração Inter (Admin)",
-        "tags": [
-          "Inter - Testes"
-        ]
-      }
-    },
-    "/inter/test/token-info": {
-      "get": {
-        "operationId": "InterTestController_getTokenInfo",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "🔍 Verificar informações do token OAuth (Admin)",
-        "tags": [
-          "Inter - Testes"
-        ]
-      }
-    },
     "/inter/banking/saldo": {
       "get": {
         "operationId": "InterBankingController_getSaldo",
@@ -2481,30 +2416,12 @@
             "description": ""
           }
         },
-        "tags": [
-          "Payments"
-        ]
-      }
-    },
-    "/payments/pix/send": {
-      "post": {
-        "operationId": "PaymentsController_sendPix",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendPixDto"
-              }
-            }
+        "security": [
+          {
+            "bearer": []
           }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
+        ],
+        "summary": "Listar pagamentos",
         "tags": [
           "Payments"
         ]

@@ -14,7 +14,6 @@ import { InterPixService } from './services/inter-pix.service';
 // Controllers
 import { InterWebhookController } from './controllers/inter-webhook.controller';
 import { InterPixKeysController } from './controllers/inter-pix-keys.controller';
-import { InterTestController } from './controllers/inter-test.controller';
 import { InterBankingController } from './controllers/inter-banking.controller';
 import { InterPixController } from './controllers/inter-pix.controller';
 import { InterPixPollingTask } from './tasks/inter-pix-polling.task';
@@ -25,7 +24,6 @@ import { InterPixTesteService } from './services/inter-pix-teste.service';
     controllers: [
         InterWebhookController,
         InterPixKeysController,
-        InterTestController,
         InterBankingController,
         InterPixController,
     ],
