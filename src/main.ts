@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 import * as fs from 'fs';
 
@@ -34,7 +35,19 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api/swagger', app, document);
+
+  // Scalar API Reference (documentação moderna)
+  app.use(
+    '/api/docs',
+    apiReference({
+      content: document,
+      theme: 'purple',
+      metaData: {
+        title: 'OTSEM API Documentation',
+      },
+    }),
+  );
 
   // Gera o arquivo openapi.json com todas as rotas
   fs.writeFileSync('./openapi.json', JSON.stringify(document, null, 2));
@@ -43,6 +56,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger docs available at: http://localhost:${port}/api/docs`);
+  console.log(`📚 Scalar docs available at: http://localhost:${port}/api/docs`);
+  console.log(`📚 Swagger UI available at: http://localhost:${port}/api/swagger`);
 }
 bootstrap();
