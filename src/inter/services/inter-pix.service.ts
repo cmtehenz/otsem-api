@@ -65,10 +65,16 @@ export class InterPixService {
             this.logger.log(`✅ Cobrança criada: ${response.data.txid}`);
             return response.data;
         } catch (error: any) {
-            this.logger.error('❌ Erro ao criar cobrança:', error.response?.data);
-            throw new BadRequestException(
-                error.response?.data?.message || 'Erro ao criar cobrança',
-            );
+            const errorData = error.response?.data;
+            this.logger.error('❌ Erro ao criar cobrança:', JSON.stringify(errorData, null, 2));
+            
+            const errorMessage = errorData?.message 
+                || errorData?.title 
+                || errorData?.detail
+                || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData))
+                || 'Erro ao criar cobrança';
+            
+            throw new BadRequestException(errorMessage);
         }
     }
 
