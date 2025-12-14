@@ -1541,6 +1541,64 @@
         ]
       }
     },
+    "/fdbank/pix-transfer": {
+      "post": {
+        "operationId": "FdbankPixTransferController_createPixTransfer",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Criar transferência PIX",
+        "tags": [
+          "FDBank PIX Transfer"
+        ]
+      }
+    },
+    "/fdbank/pix-transfer/generate-dynamic-qrcode": {
+      "post": {
+        "operationId": "FdbankPixTransferController_generatePixDynamicQrCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePixQrCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "QR Code gerado com sucesso"
+          },
+          "400": {
+            "description": "Valor mínimo não atingido ou dados inválidos"
+          }
+        },
+        "summary": "Gerar QR Code PIX dinâmico (valor mínimo R$ 10,00)",
+        "tags": [
+          "FDBank PIX Transfer"
+        ]
+      }
+    },
+    "/fdbank/pix-transfer/capture-qrcode": {
+      "post": {
+        "operationId": "FdbankPixTransferController_captureQrCode",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Capturar dados de um QR Code PIX",
+        "tags": [
+          "FDBank PIX Transfer"
+        ]
+      }
+    },
     "/wallet": {
       "get": {
         "operationId": "WalletController_listWallets",
@@ -3030,6 +3088,32 @@
       "UpdateCustomerDto": {
         "type": "object",
         "properties": {}
+      },
+      "GeneratePixQrCodeDto": {
+        "type": "object",
+        "properties": {
+          "pixKeyId": {
+            "type": "string",
+            "description": "ID da chave PIX cadastrada no FDBank"
+          },
+          "value": {
+            "type": "number",
+            "description": "Valor do QR Code em reais (mínimo R$ 10,00)",
+            "minimum": 10
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem opcional para o pagador"
+          },
+          "externalId": {
+            "type": "string",
+            "description": "ID externo para referência"
+          }
+        },
+        "required": [
+          "pixKeyId",
+          "value"
+        ]
       },
       "CreateWebhookCallbackDto": {
         "type": "object",
