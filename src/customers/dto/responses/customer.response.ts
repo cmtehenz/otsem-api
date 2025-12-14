@@ -5,6 +5,9 @@ export class CustomerResponse {
     id: string;
 
     @ApiProperty()
+    userId: string;
+
+    @ApiProperty()
     type: string;
 
     @ApiProperty()

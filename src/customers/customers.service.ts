@@ -212,6 +212,7 @@ export class CustomersService {
   private toResponse = (customer: any): CustomerResponse => {
     return {
       id: customer.id,
+      userId: customer.userId,
       type: customer.type,
       name: customer.name,
       email: customer.email,
