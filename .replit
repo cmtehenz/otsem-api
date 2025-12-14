@@ -21,6 +21,8 @@ INTER_PIX_KEY_TYPE = "EVP"
 OKX_API_URL = "https://www.okx.com"
 FDBANK_API_URL = "https://api-baas.fdbank.com.br/v1.0/"
 FDBANK_API_WEBHOOK = "https://api.otsembank.com/webhook-fd"
+INTER_CERT_PATH = "/home/runner/workspace/inter-keys/certificado.crt"
+INTER_KEY_PATH = "/home/runner/workspace/inter-keys/chave_privada.key"
 
 [workflows]
 runButton = "Project"
@@ -38,13 +40,13 @@ args = "OTSEM API"
 name = "OTSEM API"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run start:dev"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx --yes @nestjs/cli start --watch"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
