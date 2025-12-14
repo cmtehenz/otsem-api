@@ -5,13 +5,13 @@ import { DiditWebhookPayloadDto } from './dto/webhook.dto';
 import { AccountStatus } from '@prisma/client';
 
 @ApiTags('Didit Webhooks')
-@Controller('didit')
+@Controller('kyc/didit')
 export class DiditController {
   private readonly logger = new Logger(DiditController.name);
 
   constructor(private readonly prisma: PrismaService) {}
 
-  @Post('webhooks/verification')
+  @Post('webhook')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Webhook para receber notificações de verificação Didit' })
   @ApiResponse({ status: 200, description: 'Webhook processado com sucesso' })
