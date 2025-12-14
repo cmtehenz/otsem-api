@@ -10,7 +10,7 @@ export class FdbankPixTransferService {
     private getHeaders() {
         return {
             'Content-Type': 'application/json',
-            'x-api-url': this.token,
+            'x-api-key': this.token,
         };
     }
 
