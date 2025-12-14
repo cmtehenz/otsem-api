@@ -1232,7 +1232,7 @@
         ]
       }
     },
-    "/kyc/didit/webhook": {
+    "/kyc/didit": {
       "post": {
         "operationId": "DiditController_handleVerificationWebhook",
         "parameters": [],

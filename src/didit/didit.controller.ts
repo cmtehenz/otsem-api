@@ -11,7 +11,7 @@ export class DiditController {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  @Post('webhook')
+  @Post()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Webhook para receber notificações de verificação Didit' })
   @ApiResponse({ status: 200, description: 'Webhook processado com sucesso' })
