@@ -655,7 +655,7 @@ export class InterPixService {
 
         // Montar Merchant Account Information (ID 26) - apenas GUI + chave
         let merchantAccountInfo = '';
-        merchantAccountInfo += tlv('00', 'br.gov.bcb.pix'); // GUI obrigatório
+        merchantAccountInfo += tlv('00', 'BR.GOV.BCB.PIX'); // GUI obrigatório (MAIÚSCULAS)
         merchantAccountInfo += tlv('01', chave.toLowerCase()); // Chave PIX (EVP em minúsculas)
 
         // Montar payload base
