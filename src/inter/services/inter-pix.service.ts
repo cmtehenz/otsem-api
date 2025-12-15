@@ -574,58 +574,92 @@ export class InterPixService {
         }
     }
 
-    // ==================== QR CODE ESTÁTICO ====================
+    // ==================== QR CODE DE LONGA DURAÇÃO ====================
 
     /**
-     * 📱 Gerar QR Code Estático (sem expiração)
-     * - Segue padrão EMV/BRCode do Banco Central
-     * - Não expira enquanto a chave PIX estiver ativa
-     * - Pode receber múltiplos pagamentos
+     * 📱 Gerar QR Code de Longa Duração via API Inter
+     * - Usa cobrança dinâmica do Inter com expiração de 1 ano
+     * - Retorna pixCopiaECola validado pelo Inter
+     * - Pode receber um único pagamento (comportamento do QR dinâmico)
      */
     async createStaticQrCode(dto: CreateStaticQrCodeDto, customerId?: string): Promise<any> {
-        this.logger.log(`📱 Gerando QR Code estático ${dto.valor ? `de R$ ${dto.valor}` : '(valor aberto)'}...`);
+        this.logger.log(`📱 Gerando QR Code de longa duração ${dto.valor ? `de R$ ${dto.valor}` : '(valor aberto)'}...`);
 
         const { chave } = this.getMainPixKey();
-        const merchantName = this.configService.get<string>('MERCHANT_NAME', 'OTSEM BANK');
-        const merchantCity = this.configService.get<string>('MERCHANT_CITY', 'SAO PAULO');
+        const txid = this.generateTxid(customerId);
 
-        // Buscar nome do customer se disponível
-        let description = dto.descricao || 'Pagamento PIX';
-        if (customerId && !dto.descricao) {
+        // Buscar nome do customer para usar na descrição
+        let customerName = 'Cliente OTSEM';
+        if (customerId) {
             const customer = await this.prisma.customer.findUnique({
                 where: { id: customerId },
                 select: { name: true },
             });
             if (customer?.name) {
-                description = `Pagamento ${customer.name}`;
+                customerName = customer.name;
             }
         }
 
-        // Gerar payload EMV (BRCode) estático
-        const payload = this.generateEmvPayload({
-            chave,
-            merchantName: merchantName.substring(0, 25),
-            merchantCity: merchantCity.substring(0, 15),
-            valor: dto.valor,
-            txid: dto.identificador?.substring(0, 25) || '',
-            infoAdicional: description.substring(0, 72),
-        });
+        try {
+            const axios = this.authService.getAxiosInstance();
+            
+            // Payload com expiração de 1 ano (31536000 segundos)
+            const payload: any = {
+                calendario: {
+                    expiracao: 31536000, // 1 ano em segundos
+                },
+                chave,
+                solicitacaoPagador: dto.descricao || `Pagamento ${customerName}`,
+            };
+            
+            // Adicionar valor apenas se informado
+            if (dto.valor) {
+                payload.valor = {
+                    original: dto.valor.toFixed(2),
+                };
+            }
+            
+            const response = await axios.put(`/pix/v2/cob/${txid}`, payload);
+            const cobData = response.data;
+            
+            this.logger.log(`✅ QR Code de longa duração criado: ${cobData.txid}`);
 
-        // Gerar código copia-e-cola
-        const pixCopiaECola = payload;
+            // Criar deposit se tiver customer
+            if (customerId) {
+                const valorCentavos = dto.valor ? Math.round(dto.valor * 100) : 0;
+                await this.prisma.deposit.create({
+                    data: {
+                        endToEnd: `PENDING-${txid}`,
+                        receiptValue: valorCentavos,
+                        receiptDate: new Date(),
+                        status: 'PENDING',
+                        customerId,
+                        externalId: txid,
+                        bankPayload: cobData as Prisma.InputJsonValue,
+                    },
+                });
+                this.logger.log(`📝 Deposit PENDING criado | txid: ${txid}`);
+            }
 
-        this.logger.log(`✅ QR Code estático gerado | Chave: ${chave}`);
-
-        return {
-            chave,
-            valor: dto.valor || null,
-            valorAberto: !dto.valor,
-            descricao: description,
-            identificador: dto.identificador || null,
-            pixCopiaECola,
-            expiracao: null,
-            message: 'QR Code estático gerado. Não expira e pode receber múltiplos pagamentos.',
-        };
+            return {
+                txid: cobData.txid,
+                chave,
+                valor: dto.valor || null,
+                valorAberto: !dto.valor,
+                descricao: dto.descricao || `Pagamento ${customerName}`,
+                identificador: dto.identificador || null,
+                pixCopiaECola: cobData.pixCopiaECola,
+                expiracao: '1 ano',
+                status: cobData.status,
+                message: 'QR Code gerado via Inter com validade de 1 ano.',
+            };
+        } catch (error: any) {
+            this.logger.error('❌ Erro ao criar QR Code via Inter:', error.message);
+            if (error.response) {
+                this.logger.error('Detalhes:', JSON.stringify(error.response.data));
+            }
+            throw error;
+        }
     }
 
     /**
