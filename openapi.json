@@ -2507,7 +2507,7 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Cobrança criada com sucesso. O txid identifica o customer para crédito automático."
           }
         },
         "security": [
@@ -2515,7 +2515,7 @@
             "bearer": []
           }
         ],
-        "summary": "📱 Criar cobrança Pix (QR Code)",
+        "summary": "📱 Criar cobrança Pix (QR Code) para depósito",
         "tags": [
           "💸 Pix (Inter)"
         ]
@@ -3260,6 +3260,11 @@
             "type": "string",
             "example": "Pagamento de serviço",
             "description": "Descrição da cobrança"
+          },
+          "customerId": {
+            "type": "string",
+            "example": "572aac8c-949e-40d5-8b87-66cc164e9000",
+            "description": "ID do customer (opcional - usa do token JWT se não informado)"
           }
         },
         "required": [

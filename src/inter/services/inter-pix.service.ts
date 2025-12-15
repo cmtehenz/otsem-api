@@ -42,28 +42,71 @@ export class InterPixService {
     // ==================== COBRANÇAS (QR CODE) ====================
 
     /**
-     * 📱 Criar cobrança Pix (QR Code)
+     * 🔑 Gerar txid único para identificar customer
+     * Formato: otsem + customerId curto + timestamp
+     * Max 35 caracteres alfanuméricos (exigência do PIX)
      */
-    async createCobranca(dto: CreatePixChargeDto): Promise<any> {
-        this.logger.log(`📱 Criando cobrança Pix de R$ ${dto.valor}...`);
+    private generateTxid(customerId?: string): string {
+        const timestamp = Date.now().toString(36);
+        if (customerId) {
+            const shortId = customerId.replace(/-/g, '').substring(0, 12);
+            return `otsem${shortId}${timestamp}`.toLowerCase();
+        }
+        const random = Math.random().toString(36).substring(2, 14);
+        return `otsem${random}${timestamp}`.toLowerCase();
+    }
+
+    /**
+     * 📱 Criar cobrança Pix (QR Code) para depósito
+     * - Gera txid único vinculado ao customer
+     * - Cria Deposit PENDING no banco
+     * - Quando webhook chegar, identifica customer pelo txid e credita automaticamente
+     */
+    async createCobranca(dto: CreatePixChargeDto, customerId?: string): Promise<any> {
+        this.logger.log(`📱 Criando cobrança Pix de R$ ${dto.valor} para customer: ${customerId || 'não informado'}...`);
 
         const { chave } = this.getMainPixKey();
+        const txid = this.generateTxid(customerId);
 
         try {
             const axios = this.authService.getAxiosInstance();
-            const response = await axios.post('/pix/v2/cob', {
+            const response = await axios.put(`/pix/v2/cob/${txid}`, {
                 calendario: {
-                    expiracao: dto.expiracao || 3600, // 1 hora
+                    expiracao: dto.expiracao || 3600,
                 },
                 valor: {
                     original: dto.valor.toFixed(2),
                 },
-                chave, // ✅ Usar chave do .env
-                solicitacaoPagador: dto.descricao || 'Cobrança OTSEM Bank',
+                chave,
+                solicitacaoPagador: dto.descricao || 'Depósito OTSEM Bank',
             });
 
-            this.logger.log(`✅ Cobrança criada: ${response.data.txid}`);
-            return response.data;
+            const cobData = response.data;
+            this.logger.log(`✅ Cobrança criada: ${cobData.txid}`);
+
+            if (customerId) {
+                const valorCentavos = Math.round(dto.valor * 100);
+                await this.prisma.deposit.create({
+                    data: {
+                        endToEnd: `PENDING-${txid}`,
+                        receiptValue: valorCentavos,
+                        receiptDate: new Date(),
+                        status: 'PENDING',
+                        customerId,
+                        externalId: txid,
+                        bankPayload: cobData as Prisma.InputJsonValue,
+                    },
+                });
+                this.logger.log(`📝 Deposit PENDING criado para customer ${customerId} | txid: ${txid}`);
+            }
+
+            return {
+                ...cobData,
+                customerId,
+                message: customerId 
+                    ? 'Cobrança criada. Quando paga, o valor será creditado automaticamente.' 
+                    : 'Cobrança criada. Sem customer vinculado - crédito manual necessário.',
+            };
         } catch (error: any) {
             const errorData = error.response?.data;
             this.logger.error('❌ Erro ao criar cobrança:', JSON.stringify(errorData, null, 2));

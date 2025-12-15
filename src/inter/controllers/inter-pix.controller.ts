@@ -67,9 +67,14 @@ export class InterPixController {
 
     @Post('cobrancas')
     @Roles(Role.CUSTOMER, Role.ADMIN)
-    @ApiOperation({ summary: '📱 Criar cobrança Pix (QR Code)' })
-    async createCobranca(@Body() dto: CreatePixChargeDto) {
-        return this.pixService.createCobranca(dto);
+    @ApiOperation({ summary: '📱 Criar cobrança Pix (QR Code) para depósito' })
+    @ApiResponse({
+        status: 201,
+        description: 'Cobrança criada com sucesso. O txid identifica o customer para crédito automático.',
+    })
+    async createCobranca(@Request() req: any, @Body() dto: CreatePixChargeDto) {
+        const customerId = dto.customerId || req.user?.customerId;
+        return this.pixService.createCobranca(dto, customerId);
     }
 
     @Get('cobrancas/:txid')

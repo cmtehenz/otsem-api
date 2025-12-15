@@ -1,6 +1,6 @@
 // src/inter/dto/create-pix-charge.dto.ts
 
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePixChargeDto {
@@ -26,4 +26,13 @@ export class CreatePixChargeDto {
     @IsOptional()
     @IsString()
     descricao?: string;
+
+    @ApiProperty({
+        example: '572aac8c-949e-40d5-8b87-66cc164e9000',
+        description: 'ID do customer (opcional - usa do token JWT se não informado)',
+        required: false
+    })
+    @IsOptional()
+    @IsString()
+    customerId?: string;
 }

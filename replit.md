@@ -63,6 +63,20 @@ Available at `http://localhost:5000/api/docs` when running.
 - `prisma/` - Database schema and migrations
 
 ## Recent Changes (Dec 2025)
+
+### Automatic PIX Deposit with Customer Identification (Dec 15)
+- **QR Code generation with customer tracking**: `POST /inter/pix/cobrancas`
+  - Generates unique `txid` with customer ID embedded (format: otsem + shortId + timestamp)
+  - Creates `Deposit` record with status PENDING and `externalId = txid`
+  - When PIX is paid, webhook identifies customer by txid and credits automatically
+- **Automatic deposit crediting via webhook**: `POST /inter/webhooks/receive/pix`
+  - Finds pending deposit by txid
+  - Verifies payment amount matches requested amount (rejects mismatches)
+  - Credits customer account automatically
+  - Creates Transaction (PIX_IN) with balance tracking
+  - PIX without linked customer saved as PENDING for manual review
+
+### Previous Changes
 - **Didit KYC Integration**: Integrated Didit API for identity verification
   - New `didit/` module with service, controller, DTOs
   - Customer model extended with `diditSessionId` and `diditVerificationUrl`

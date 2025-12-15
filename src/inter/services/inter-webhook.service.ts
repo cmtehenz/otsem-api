@@ -303,12 +303,14 @@ export class InterWebhookService {
 
     /**
      * 💰 Processar Pix recebido
+     * - Identifica customer pelo txid (se começar com 'otsem')
+     * - Credita automaticamente na conta do customer
+     * - Cria Transaction de PIX_IN
      */
     async handlePixReceived(payload: any): Promise<void> {
         this.logger.log('💰 Processando Pix recebido...');
         this.logger.debug('Payload:', JSON.stringify(payload, null, 2));
 
-        // Adiciona um console.log para ver tudo que vem do Inter
         console.log('🔎 Payload completo recebido do Inter:', JSON.stringify(payload, null, 2));
 
         const pixList = payload.pix || [];
@@ -322,20 +324,21 @@ export class InterWebhookService {
             try {
                 const endToEnd = pix.endToEndId || pix.e2eId;
                 const txid = pix.txid;
+                const valorReais = pix.valor || 0;
+                const valorCentavos = Math.round(valorReais * 100);
 
                 if (!endToEnd) {
                     this.logger.warn('⚠️ Pix sem endToEndId, ignorando');
                     continue;
                 }
 
-                // ✅ Verificar se já existe
-                const existing = await this.prisma.deposit.findUnique({
+                // ✅ Verificar se já processamos este endToEnd
+                const existingByEndToEnd = await this.prisma.deposit.findUnique({
                     where: { endToEnd },
                 });
 
-                if (existing) {
+                if (existingByEndToEnd) {
                     this.logger.warn(`⚠️ Pix duplicado: ${endToEnd}`);
-
                     await this.prisma.webhookLog.create({
                         data: {
                             source: 'INTER',
@@ -350,36 +353,152 @@ export class InterWebhookService {
                     continue;
                 }
 
-                // ✅ Processar Pix novo
-                const valorCentavos = Math.round((pix.valor || 0) * 100);
+                // ✅ Buscar Deposit PENDING pelo txid (criado quando gerou QR Code)
+                let pendingDeposit = null;
+                if (txid) {
+                    pendingDeposit = await this.prisma.deposit.findUnique({
+                        where: { externalId: txid },
+                        include: { customer: true },
+                    });
+                }
 
-                await this.prisma.$transaction([
-                    this.prisma.deposit.create({
-                        data: {
-                            endToEnd,
-                            receiptValue: valorCentavos,
-                            receiptDate: new Date(pix.horario || new Date()),
-                            payerName: pix.pagador?.nome,
-                            payerTaxNumber: pix.pagador?.cpf || pix.pagador?.cnpj,
-                            payerMessage: pix.infoPagador,
-                            status: 'CONFIRMED',
-                            bankPayload: pix as Prisma.InputJsonValue,
-                        },
-                    }),
-                    this.prisma.webhookLog.create({
-                        data: {
-                            source: 'INTER',
-                            type: 'pix_received',
-                            payload: pix as Prisma.InputJsonValue,
-                            endToEnd,
-                            txid,
-                            processed: true,
-                            processedAt: new Date(),
-                        },
-                    }),
-                ]);
+                if (pendingDeposit && pendingDeposit.status === 'PENDING' && pendingDeposit.customerId) {
+                    // ✅ CASO 1: QR Code com customer vinculado - crédito automático
+                    this.logger.log(`✅ Deposit PENDING encontrado para txid ${txid} | Customer: ${pendingDeposit.customerId}`);
 
-                this.logger.log(`✅ Pix processado: ${endToEnd} | R$ ${pix.valor}`);
+                    // Verificar se valor pago corresponde ao solicitado
+                    const valorSolicitadoCentavos = pendingDeposit.receiptValue;
+                    if (valorCentavos !== valorSolicitadoCentavos) {
+                        this.logger.warn(`⚠️ Valor diferente! Solicitado: ${valorSolicitadoCentavos} centavos | Pago: ${valorCentavos} centavos`);
+                        // Atualizar deposit como MISMATCH para revisão manual
+                        await this.prisma.$transaction([
+                            this.prisma.deposit.update({
+                                where: { id: pendingDeposit.id },
+                                data: {
+                                    endToEnd,
+                                    receiptValue: valorCentavos,
+                                    receiptDate: new Date(pix.horario || new Date()),
+                                    payerName: pix.pagador?.nome,
+                                    payerTaxNumber: pix.pagador?.cpf || pix.pagador?.cnpj,
+                                    payerMessage: pix.infoPagador,
+                                    status: 'PENDING',
+                                    errorMessage: `Valor diferente: solicitado ${valorSolicitadoCentavos/100}, pago ${valorCentavos/100}`,
+                                    bankPayload: pix as Prisma.InputJsonValue,
+                                },
+                            }),
+                            this.prisma.webhookLog.create({
+                                data: {
+                                    source: 'INTER',
+                                    type: 'pix_received',
+                                    payload: pix as Prisma.InputJsonValue,
+                                    endToEnd,
+                                    txid,
+                                    processed: true,
+                                    error: `Valor diferente: solicitado ${valorSolicitadoCentavos}, pago ${valorCentavos}`,
+                                    processedAt: new Date(),
+                                },
+                            }),
+                        ]);
+                        this.logger.log(`📝 Pix salvo como PENDING (valor diferente) para revisão manual: ${endToEnd}`);
+                        continue;
+                    }
+
+                    const account = await this.prisma.account.findUnique({
+                        where: { customerId: pendingDeposit.customerId },
+                    });
+
+                    if (!account) {
+                        this.logger.error(`❌ Conta não encontrada para customer ${pendingDeposit.customerId}`);
+                        throw new Error(`Conta não encontrada para customer ${pendingDeposit.customerId}`);
+                    }
+
+                    const valorDecimal = new Prisma.Decimal(valorReais);
+                    const balanceBefore = account.balance;
+                    const balanceAfter = balanceBefore.add(valorDecimal);
+
+                    await this.prisma.$transaction([
+                        // Atualizar Deposit para CONFIRMED (atualiza endToEnd do placeholder para o real)
+                        this.prisma.deposit.update({
+                            where: { id: pendingDeposit.id },
+                            data: {
+                                endToEnd,
+                                receiptValue: valorCentavos,
+                                receiptDate: new Date(pix.horario || new Date()),
+                                payerName: pix.pagador?.nome,
+                                payerTaxNumber: pix.pagador?.cpf || pix.pagador?.cnpj,
+                                payerMessage: pix.infoPagador,
+                                status: 'CONFIRMED',
+                                bankPayload: pix as Prisma.InputJsonValue,
+                            },
+                        }),
+                        // Creditar na conta
+                        this.prisma.account.update({
+                            where: { id: account.id },
+                            data: { balance: balanceAfter },
+                        }),
+                        // Criar Transaction
+                        this.prisma.transaction.create({
+                            data: {
+                                accountId: account.id,
+                                type: 'PIX_IN',
+                                status: 'COMPLETED',
+                                amount: valorDecimal,
+                                balanceBefore,
+                                balanceAfter,
+                                description: `Depósito PIX de ${pix.pagador?.nome || 'desconhecido'}`,
+                                externalId: endToEnd,
+                                externalData: pix as Prisma.InputJsonValue,
+                                completedAt: new Date(),
+                            },
+                        }),
+                        // Log do webhook
+                        this.prisma.webhookLog.create({
+                            data: {
+                                source: 'INTER',
+                                type: 'pix_received',
+                                payload: pix as Prisma.InputJsonValue,
+                                endToEnd,
+                                txid,
+                                processed: true,
+                                processedAt: new Date(),
+                            },
+                        }),
+                    ]);
+
+                    this.logger.log(`✅ Pix creditado automaticamente: ${endToEnd} | R$ ${valorReais} | Customer: ${pendingDeposit.customerId}`);
+                } else {
+                    // ✅ CASO 2: Pix sem QR Code vinculado - salvar para revisão manual
+                    this.logger.log(`⚠️ Pix sem customer vinculado: ${endToEnd} | txid: ${txid}`);
+
+                    await this.prisma.$transaction([
+                        this.prisma.deposit.create({
+                            data: {
+                                endToEnd,
+                                receiptValue: valorCentavos,
+                                receiptDate: new Date(pix.horario || new Date()),
+                                payerName: pix.pagador?.nome,
+                                payerTaxNumber: pix.pagador?.cpf || pix.pagador?.cnpj,
+                                payerMessage: pix.infoPagador,
+                                status: 'PENDING',
+                                externalId: txid,
+                                bankPayload: pix as Prisma.InputJsonValue,
+                            },
+                        }),
+                        this.prisma.webhookLog.create({
+                            data: {
+                                source: 'INTER',
+                                type: 'pix_received',
+                                payload: pix as Prisma.InputJsonValue,
+                                endToEnd,
+                                txid,
+                                processed: true,
+                                processedAt: new Date(),
+                            },
+                        }),
+                    ]);
+
+                    this.logger.log(`📝 Pix salvo como PENDING (sem customer): ${endToEnd} | R$ ${valorReais}`);
+                }
             } catch (error: any) {
                 this.logger.error('❌ Erro ao processar Pix:', error.message);
 
