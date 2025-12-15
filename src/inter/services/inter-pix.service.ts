@@ -109,13 +109,23 @@ export class InterPixService {
             };
         } catch (error: any) {
             const errorData = error.response?.data;
-            this.logger.error('❌ Erro ao criar cobrança:', JSON.stringify(errorData, null, 2));
+            const errorStatus = error.response?.status;
+            this.logger.error(`❌ Erro ao criar cobrança (${errorStatus}):`, JSON.stringify(errorData, null, 2));
+            this.logger.error(`❌ txid usado: ${txid} | chave: ${chave} | valor: ${dto.valor}`);
             
-            const errorMessage = errorData?.message 
-                || errorData?.title 
-                || errorData?.detail
-                || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData))
-                || 'Erro ao criar cobrança';
+            // Inter retorna violações em um array
+            let errorMessage = 'Cobrança inválida.';
+            if (errorData?.violacoes && Array.isArray(errorData.violacoes)) {
+                errorMessage = errorData.violacoes.map((v: any) => `${v.propriedade}: ${v.razao}`).join('; ');
+            } else if (errorData?.message) {
+                errorMessage = errorData.message;
+            } else if (errorData?.title) {
+                errorMessage = errorData.title;
+            } else if (errorData?.detail) {
+                errorMessage = errorData.detail;
+            } else if (typeof errorData === 'string') {
+                errorMessage = errorData;
+            }
             
             throw new BadRequestException(errorMessage);
         }
