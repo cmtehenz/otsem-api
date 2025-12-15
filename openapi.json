@@ -3249,7 +3249,7 @@
           "valor": {
             "type": "number",
             "example": 100.5,
-            "description": "Valor da cobrança"
+            "description": "Valor da cobrança (opcional - se não informado, gera QR Code com valor aberto)"
           },
           "expiracao": {
             "type": "number",
@@ -3266,10 +3266,7 @@
             "example": "572aac8c-949e-40d5-8b87-66cc164e9000",
             "description": "ID do customer (opcional - usa do token JWT se não informado)"
           }
-        },
-        "required": [
-          "valor"
-        ]
+        }
       }
     }
   }

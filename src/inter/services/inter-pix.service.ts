@@ -71,29 +71,50 @@ export class InterPixService {
      * - Quando webhook chegar, identifica customer pelo txid e credita automaticamente
      */
     async createCobranca(dto: CreatePixChargeDto, customerId?: string): Promise<any> {
-        this.logger.log(`📱 Criando cobrança Pix de R$ ${dto.valor} para customer: ${customerId || 'não informado'}...`);
+        this.logger.log(`📱 Criando cobrança Pix ${dto.valor ? `de R$ ${dto.valor}` : '(valor aberto)'} para customer: ${customerId || 'não informado'}...`);
 
         const { chave } = this.getMainPixKey();
         const txid = this.generateTxid(customerId);
 
+        // Buscar nome do customer para usar na descrição
+        let customerName = 'Cliente OTSEM';
+        if (customerId) {
+            const customer = await this.prisma.customer.findUnique({
+                where: { id: customerId },
+                select: { name: true },
+            });
+            if (customer?.name) {
+                customerName = customer.name;
+            }
+        }
+
         try {
             const axios = this.authService.getAxiosInstance();
-            const response = await axios.put(`/pix/v2/cob/${txid}`, {
+            
+            // Payload base
+            const payload: any = {
                 calendario: {
                     expiracao: dto.expiracao || 3600,
                 },
-                valor: {
-                    original: dto.valor.toFixed(2),
-                },
                 chave,
-                solicitacaoPagador: dto.descricao || 'Depósito OTSEM Bank',
-            });
+                solicitacaoPagador: dto.descricao || `Depósito para ${customerName}`,
+            };
+            
+            // Adicionar valor apenas se informado (QR Code com valor fixo)
+            if (dto.valor) {
+                payload.valor = {
+                    original: dto.valor.toFixed(2),
+                };
+            }
+            
+            const response = await axios.put(`/pix/v2/cob/${txid}`, payload);
 
             const cobData = response.data;
             this.logger.log(`✅ Cobrança criada: ${cobData.txid}`);
 
             if (customerId) {
-                const valorCentavos = Math.round(dto.valor * 100);
+                // Valor em centavos (0 se valor aberto)
+                const valorCentavos = dto.valor ? Math.round(dto.valor * 100) : 0;
                 await this.prisma.deposit.create({
                     data: {
                         endToEnd: `PENDING-${txid}`,
@@ -105,7 +126,7 @@ export class InterPixService {
                         bankPayload: cobData as Prisma.InputJsonValue,
                     },
                 });
-                this.logger.log(`📝 Deposit PENDING criado para customer ${customerId} | txid: ${txid}`);
+                this.logger.log(`📝 Deposit PENDING criado para customer ${customerId} | txid: ${txid} | valor: ${valorCentavos === 0 ? 'aberto' : valorCentavos}`);
             }
 
             return {

@@ -366,9 +366,11 @@ export class InterWebhookService {
                     // ✅ CASO 1: QR Code com customer vinculado - crédito automático
                     this.logger.log(`✅ Deposit PENDING encontrado para txid ${txid} | Customer: ${pendingDeposit.customerId}`);
 
-                    // Verificar se valor pago corresponde ao solicitado
+                    // Verificar se valor pago corresponde ao solicitado (0 = valor aberto, aceita qualquer valor)
                     const valorSolicitadoCentavos = pendingDeposit.receiptValue;
-                    if (valorCentavos !== valorSolicitadoCentavos) {
+                    const isValorAberto = valorSolicitadoCentavos === 0;
+                    
+                    if (!isValorAberto && valorCentavos !== valorSolicitadoCentavos) {
                         this.logger.warn(`⚠️ Valor diferente! Solicitado: ${valorSolicitadoCentavos} centavos | Pago: ${valorCentavos} centavos`);
                         // Atualizar deposit como MISMATCH para revisão manual
                         await this.prisma.$transaction([

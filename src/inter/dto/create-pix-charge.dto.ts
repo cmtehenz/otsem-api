@@ -4,10 +4,15 @@ import { IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePixChargeDto {
-    @ApiProperty({ example: 100.50, description: 'Valor da cobrança' })
+    @ApiProperty({ 
+        example: 100.50, 
+        description: 'Valor da cobrança (opcional - se não informado, gera QR Code com valor aberto)',
+        required: false
+    })
+    @IsOptional()
     @IsNumber()
     @Min(0.01)
-    valor: number;
+    valor?: number;
 
     @ApiProperty({
         example: 3600,
