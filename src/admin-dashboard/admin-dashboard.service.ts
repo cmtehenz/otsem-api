@@ -8,97 +8,102 @@ export class AdminDashboardService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly interBanking: InterBankingService, // voltou
+    private readonly interBanking: InterBankingService,
   ) { }
 
   /**
-   * 📊 Dashboard completo com todos os dados
+   * Dashboard completo com todos os dados
    */
   async getStats() {
-    this.logger.log('📊 Obtendo estatísticas completas...');
+    this.logger.log('Obtendo estatisticas completas...');
 
     try {
       const [
         totalCustomers,
-        totalDeposits,
-        totalPayouts,
-        pendingDeposits,
+        totalPixIn,
+        totalPixOut,
+        pendingTx,
       ] = await Promise.all([
         this.prisma.customer.count(),
-        this.prisma.deposit.count(),
-        this.prisma.payout.count(),
-        this.safePendingDeposits(),
+        this.prisma.transaction.count({ where: { type: 'PIX_IN' } }),
+        this.prisma.transaction.count({ where: { type: 'PIX_OUT' } }),
+        this.prisma.transaction.count({ where: { status: 'PENDING' } }),
       ]);
 
-      const [depositSum, payoutSum, banking] = await Promise.all([
-        this.safeDepositSumConfirmed(),
-        this.safePayoutSumCompleted(),
+      const [pixInSum, pixOutSum, banking] = await Promise.all([
+        this.prisma.transaction.aggregate({
+          _sum: { amount: true },
+          where: { type: 'PIX_IN', status: 'COMPLETED' },
+        }).catch(() => ({ _sum: { amount: null } })),
+        this.prisma.transaction.aggregate({
+          _sum: { amount: true },
+          where: { type: 'PIX_OUT', status: 'COMPLETED' },
+        }).catch(() => ({ _sum: { amount: null } })),
         this.interBanking.getDashboardData().catch(() => null),
       ]);
 
       return {
         customers: { total: totalCustomers },
-        deposits: {
-          total: totalDeposits,
-          pending: pendingDeposits,
-          confirmed: totalDeposits - pendingDeposits,
-          totalValue: this.toReais(depositSum._sum.receiptValue),
-        },
-        payouts: {
-          total: totalPayouts,
-          totalValue: this.toNumber(payoutSum._sum.amount),
+        transactions: {
+          pixIn: {
+            total: totalPixIn,
+            totalValue: this.toNumber(pixInSum._sum.amount),
+          },
+          pixOut: {
+            total: totalPixOut,
+            totalValue: this.toNumber(pixOutSum._sum.amount),
+          },
+          pending: pendingTx,
         },
         banking,
         timestamp: new Date().toISOString(),
       };
     } catch (e: any) {
-      this.logger.error('❌ Erro ao obter stats:', e.message);
+      this.logger.error('Erro ao obter stats:', e.message);
       throw e;
     }
   }
 
   /**
-   * 📈 Resumo de customers e transações
+   * Resumo de customers e transacoes
    */
   async getSummary() {
-    this.logger.log('📈 Obtendo resumo...');
+    this.logger.log('Obtendo resumo...');
 
     try {
-      const [totalCustomers, totalDeposits, totalPayouts] =
+      const [totalCustomers, totalTransactions] =
         await Promise.all([
           this.prisma.customer.count(),
-          this.prisma.deposit.count(),
-          this.prisma.payout.count(),
+          this.prisma.transaction.count(),
         ]);
 
       return {
         customers: totalCustomers,
-        deposits: totalDeposits,
-        payouts: totalPayouts,
+        transactions: totalTransactions,
         timestamp: new Date().toISOString(),
       };
     } catch (error: any) {
-      this.logger.error('❌ Erro ao obter resumo:', error.message);
+      this.logger.error('Erro ao obter resumo:', error.message);
       throw error;
     }
   }
 
   async getInterBalance() {
-    this.logger.log('💰 Consultando saldo Inter...');
+    this.logger.log('Consultando saldo Inter...');
     try {
       const saldo = await this.interBanking.getSaldo();
       return { saldo, timestamp: new Date().toISOString() };
     } catch (e: any) {
-      this.logger.error('❌ Erro saldo Inter:', e.message);
+      this.logger.error('Erro saldo Inter:', e.message);
       return { error: e.message, saldo: null, timestamp: new Date().toISOString() };
     }
   }
 
   /**
-   * 👥 Últimos 10 customers cadastrados
+   * Ultimos 10 customers cadastrados
    */
   async getLatestUsers() {
-    this.logger.log('👥 Buscando últimos customers...');
+    this.logger.log('Buscando ultimos customers...');
 
     try {
       const users = await this.prisma.customer.findMany({
@@ -109,96 +114,57 @@ export class AdminDashboardService {
 
       return { users, total: users.length, timestamp: new Date().toISOString() };
     } catch (error: any) {
-      this.logger.error('❌ Erro ao buscar customers:', error.message);
+      this.logger.error('Erro ao buscar customers:', error.message);
       throw error;
     }
   }
 
   /**
-   * 💸 Últimas 10 transações (depósitos e saques)
+   * Ultimas 10 transacoes (PIX_IN e PIX_OUT)
    */
   async getLatestTransactions() {
-    this.logger.log('💸 Buscando últimas transações...');
+    this.logger.log('Buscando ultimas transacoes...');
 
     try {
-      const [deposits, payouts] = await Promise.all([
-        this.prisma.deposit.findMany({
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            endToEnd: true,
-            receiptValue: true,
-            status: true,
-            payerName: true,
-            createdAt: true,
-          },
-        }),
-        this.prisma.payout.findMany({
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            amount: true,
-            status: true,
-            pixKey: true,
-            beneficiaryName: true,
-            createdAt: true,
-          },
-        }),
-      ]);
-
-      const transactions = [
-        ...deposits.map(d => ({
-          id: d.id,
-          type: 'DEPOSIT' as const,
-          value: this.toReais(d.receiptValue),
-          status: d.status,
-          customerName: d.payerName,
-          reference: d.endToEnd,
-          createdAt: d.createdAt,
-        })),
-        ...payouts.map(p => ({
-          id: p.id,
-          type: 'PAYOUT' as const,
-          value: this.toNumber(p.amount),
-          status: p.status,
-          customerName: p.beneficiaryName,
-          reference: p.pixKey,
-          createdAt: p.createdAt,
-        })),
-      ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      const transactions = await this.prisma.transaction.findMany({
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          type: true,
+          status: true,
+          amount: true,
+          payerName: true,
+          receiverName: true,
+          endToEnd: true,
+          txid: true,
+          description: true,
+          createdAt: true,
+          completedAt: true,
+        },
+      });
 
       return {
-        transactions: transactions.slice(0, 10),
+        transactions: transactions.map(tx => ({
+          id: tx.id,
+          type: tx.type,
+          status: tx.status,
+          value: this.toNumber(tx.amount),
+          customerName: tx.type === 'PIX_IN' ? tx.payerName : tx.receiverName,
+          reference: tx.endToEnd || tx.txid,
+          description: tx.description,
+          createdAt: tx.createdAt,
+          completedAt: tx.completedAt,
+        })),
         total: transactions.length,
         timestamp: new Date().toISOString(),
       };
     } catch (error: any) {
-      this.logger.error('❌ Erro ao buscar transações:', error.message);
+      this.logger.error('Erro ao buscar transacoes:', error.message);
       throw error;
     }
   }
 
-  // Helpers (tolerantes até enum ser criado no banco)
-  private async safePendingDeposits() {
-    return this.prisma.deposit.count({ where: { status: 'PENDING' } }).catch(() => 0);
-  }
-  private async safeDepositSumConfirmed() {
-    return this.prisma.deposit.aggregate({
-      _sum: { receiptValue: true },
-      where: { status: 'CONFIRMED' },
-    }).catch(() => ({ _sum: { receiptValue: 0 } }));
-  }
-  private async safePayoutSumCompleted() {
-    return this.prisma.payout.aggregate({
-      _sum: { amount: true },
-      where: { status: 'COMPLETED' },
-    }).catch(() => ({ _sum: { amount: 0 } }));
-  }
-  private toReais(intOrNull: number | null | undefined) {
-    return Number(intOrNull || 0) / 100;
-  }
   private toNumber(decOrNull: any) {
     return decOrNull ? Number(decOrNull) : 0;
   }

@@ -114,20 +114,31 @@ export class InterPixService {
             this.logger.log(`✅ Cobrança criada: ${cobData.txid}`);
 
             if (customerId) {
-                // Valor em centavos (0 se valor aberto)
-                const valorCentavos = dto.valor ? Math.round(dto.valor * 100) : 0;
-                await this.prisma.deposit.create({
-                    data: {
-                        endToEnd: `PENDING-${txid}`,
-                        receiptValue: valorCentavos,
-                        receiptDate: new Date(),
-                        status: 'PENDING',
-                        customerId,
-                        externalId: txid,
-                        bankPayload: cobData as Prisma.InputJsonValue,
-                    },
+                // Buscar conta do customer
+                const account = await this.prisma.account.findUnique({
+                    where: { customerId },
                 });
-                this.logger.log(`📝 Deposit PENDING criado para customer ${customerId} | txid: ${txid} | valor: ${valorCentavos === 0 ? 'aberto' : valorCentavos}`);
+
+                if (account) {
+                    const valorDecimal = dto.valor ? new Prisma.Decimal(dto.valor) : new Prisma.Decimal(0);
+                    await this.prisma.transaction.create({
+                        data: {
+                            accountId: account.id,
+                            type: 'PIX_IN',
+                            status: 'PENDING',
+                            amount: valorDecimal,
+                            balanceBefore: account.balance,
+                            balanceAfter: account.balance,
+                            description: dto.descricao || `Aguardando depósito PIX de ${customerName}`,
+                            txid,
+                            pixKey: chave,
+                            bankPayload: cobData as Prisma.InputJsonValue,
+                        },
+                    });
+                    this.logger.log(`📝 Transaction PENDING criado para customer ${customerId} | txid: ${txid} | valor: ${dto.valor || 'aberto'}`);
+                } else {
+                    this.logger.warn(`⚠️ Conta não encontrada para customer ${customerId}`);
+                }
             }
 
             return {

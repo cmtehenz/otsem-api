@@ -471,12 +471,34 @@ model Transaction {
   description String?
   metadata    Json?
 
+  // Dados do pagador (PIX_IN)
+  payerName      String?
+  payerTaxNumber String?
+  payerMessage   String? @db.Text
+
+  // Dados do recebedor (PIX_OUT)
+  receiverName      String?
+  receiverTaxNumber String?
+  receiverPixKey    String?
+  receiverBankCode  String?
+
+  // Chave PIX usada na transação
+  pixKey String?
+
+  // Identificadores externos
   externalId   String? @unique
+  endToEnd     String? @unique
+  txid         String? @unique
   externalData Json?
+  bankPayload  Json?
+
+  // Erro (se houver)
+  errorMessage String? @db.Text
 
   relatedTxId String? @unique
 
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
   processedAt DateTime?
   completedAt DateTime?
 
@@ -488,6 +510,7 @@ model Transaction {
   @@index([accountId, createdAt])
   @@index([type, status])
   @@index([externalId])
+  @@index([endToEnd])
   @@map("transactions")
 }
 
