@@ -57,23 +57,53 @@ Available at `http://localhost:5000/api/docs` when running.
   - `fdbank/` - FDBank integration
   - `okx/` - OKX exchange integration
   - `payments/` - Payment processing
+  - `transactions/` - Unified transaction management (PIX_IN, PIX_OUT)
   - `wallet/` - Multi-network wallet management (Solana, Ethereum, Polygon, BSC, Tron, etc.)
   - `statements/` - Account statements
+  - `admin-dashboard/` - Admin dashboard with stats and reports
   - `prisma/` - Prisma service
 - `prisma/` - Database schema and migrations
 
+## Data Model Architecture
+
+### Unified Transaction Model (Dec 16, 2025)
+The system uses a **unified Transaction model** for all PIX operations:
+- **TransactionType**: PIX_IN (deposits), PIX_OUT (withdrawals), TRANSFER, ADJUSTMENT
+- **TransactionStatus**: PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED, REVERSED
+
+Transaction fields:
+- `type` - Transaction type (PIX_IN, PIX_OUT, etc.)
+- `status` - Current status
+- `amount` - Transaction amount in BRL
+- `txid` - Unique transaction ID for PIX (embedded in QR Code)
+- `endToEnd` - End-to-end ID from bank
+- `payerName`, `payerTaxNumber` - Payer information (for PIX_IN)
+- `receiverName`, `receiverPixKey` - Receiver information (for PIX_OUT)
+- `balanceBefore`, `balanceAfter` - Balance tracking
+- `bankPayload` - Original bank webhook payload (JSON)
+
+Legacy models (Deposit, Payment) are kept for backward compatibility.
+
 ## Recent Changes (Dec 2025)
+
+### Unified Transaction Model Refactoring (Dec 16)
+- Migrated from separate Deposit/Payment models to unified Transaction model
+- New fields: payerName, payerTaxNumber, receiverName, receiverPixKey, endToEnd, txid
+- InterWebhookService now creates and updates Transaction records directly
+- InterPixService creates Transaction with status PENDING when generating QR Code
+- AdminDashboardService updated to query Transaction model for statistics
+- Better tracking with balanceBefore/balanceAfter on every transaction
 
 ### Automatic PIX Deposit with Customer Identification (Dec 15)
 - **QR Code generation with customer tracking**: `POST /inter/pix/cobrancas`
   - Generates unique `txid` with customer ID embedded (format: otsem + shortId + timestamp)
-  - Creates `Deposit` record with status PENDING and `externalId = txid`
+  - Creates Transaction record with status PENDING and `externalId = txid`
   - When PIX is paid, webhook identifies customer by txid and credits automatically
 - **Automatic deposit crediting via webhook**: `POST /inter/webhooks/receive/pix`
-  - Finds pending deposit by txid
+  - Finds pending Transaction by txid
   - Verifies payment amount matches requested amount (rejects mismatches)
   - Credits customer account automatically
-  - Creates Transaction (PIX_IN) with balance tracking
+  - Updates Transaction to COMPLETED with balance tracking
   - PIX without linked customer saved as PENDING for manual review
 
 ### Previous Changes
