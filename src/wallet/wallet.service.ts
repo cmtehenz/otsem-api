@@ -233,6 +233,27 @@ export class WalletService {
           },
         });
       }
+
+      // Atualiza Transaction associada (externalId = endToEnd) com spread/compra
+      const tx = await this.prisma.transaction.findFirst({ where: { externalId: pixResult.endToEndId } });
+      if (tx) {
+        const metadata = (tx.metadata as any) || {};
+        await this.prisma.transaction.update({
+          where: { id: tx.id },
+          data: {
+            metadata: {
+              ...metadata,
+              spread: {
+                chargedBrl: brlAmount,
+                exchangedBrl: brlToExchange,
+                spreadBrl: spreadAmount,
+                spreadRate,
+              },
+              okxBuyResult,
+            },
+          },
+        });
+      }
     }
 
     let wallet;
