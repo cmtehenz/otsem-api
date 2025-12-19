@@ -1,0 +1,30 @@
+8d7 via micro-transferência para customer 572aac8c-949e-40d5-8b87-66cc164e9000
+0|otsem-api  | 2025-12-19T11:00:46: [Nest] 270282  - 12/19/2025, 11:00:46 AM   DEBUG [InterPixService] 📤 Payload validação:
+0|otsem-api  | 2025-12-19T11:00:46: [Nest] 270282  - 12/19/2025, 11:00:46 AM   DEBUG [InterPixService] {
+0|otsem-api  | 2025-12-19T11:00:46:   "valor": 0.01,
+0|otsem-api  | 2025-12-19T11:00:46:   "descricao": "Validacao chave PIX OTSEM",
+0|otsem-api  | 2025-12-19T11:00:46:   "destinatario": {
+0|otsem-api  | 2025-12-19T11:00:46:     "tipo": "CHAVE",
+0|otsem-api  | 2025-12-19T11:00:46:     "chave": "cmtehenz@gmail.com",
+0|otsem-api  | 2025-12-19T11:00:46:     "tipoChave": "EMAIL"
+0|otsem-api  | 2025-12-19T11:00:46:   }
+0|otsem-api  | 2025-12-19T11:00:46: }
+0|otsem-api  | 2025-12-19T11:00:46: [Nest] 270282  - 12/19/2025, 11:00:46 AM     LOG [InterAuthService] 🔐 Novo token OAuth 2.0
+0|otsem-api  | 2025-12-19T11:00:47: [Nest] 270282  - 12/19/2025, 11:00:47 AM     LOG [InterAuthService] ✅ Token obtido
+0|otsem-api  | 2025-12-19T11:00:48: [Nest] 270282  - 12/19/2025, 11:00:48 AM     LOG [InterPixService] ✅ Micro-transferência enviada: undefined
+0|otsem-api  | 2025-12-19T11:00:48: [Nest] 270282  - 12/19/2025, 11:00:48 AM   DEBUG [InterPixService] 📦 Resposta completa da API Inter:
+0|otsem-api  | 2025-12-19T11:00:48: [Nest] 270282  - 12/19/2025, 11:00:48 AM   DEBUG [InterPixService] {
+0|otsem-api  | 2025-12-19T11:00:48:   "tipoRetorno": "PROCESSADO",
+0|otsem-api  | 2025-12-19T11:00:48:   "codigoSolicitacao": "84847138-ec09-48a2-b41d-c71c9b0f8edc",
+0|otsem-api  | 2025-12-19T11:00:48:   "dataPagamento": "2025-12-19",
+0|otsem-api  | 2025-12-19T11:00:48:   "dataOperacao": "2025-12-19"
+0|otsem-api  | 2025-12-19T11:00:48: }
+0|otsem-api  | 2025-12-19T11:00:48: [Nest] 270282  - 12/19/2025, 11:00:48 AM   DEBUG [InterPixService] 👤 Dados do destinatário:
+0|otsem-api  | 2025-12-19T11:00:48: [Nest] 270282  - 12/19/2025, 11:00:48 AM   DEBUG [InterPixService] {}
+0|otsem-api  | 2025-12-19T11:00:48: [Nest] 270282  - 12/19/2025, 11:00:48 AM   DEBUG [InterPixService] 🔍 Comparação: cpfCliente=04236358913 vs cpfDest= | cnpjCliente= vs cnpjDest=
+0|otsem-api  | 2025-12-19T11:00:48: [Nest] 270282  - 12/19/2025, 11:00:48 AM    WARN [InterPixService] ⚠️ Chave não validada: CPF/CNPJ não corresponde
+0|otsem-api  | 2025-12-19T11:01:00: [Nest] 270282  - 12/19/2025, 11:01:00 AM     LOG [InterPixPollingTask] 🔄 Iniciando polling de reconciliação PIX...
+0|otsem-api  | 2025-12-19T11:01:00: [Nest] 270282  - 12/19/2025, 11:01:00 AM     LOG [InterPixService] 🔄 Iniciando reconciliação de cobranças dos últimos 1 dias...
+0|otsem-api  | 2025-12-19T11:01:00: [Nest] 270282  - 12/19/2025, 11:01:00 AM     LOG [InterPixService] 🔄 Listando cobranças PIX dos últimos 1 dias...
+0|otsem-api  | 2025-12-19T11:01:00: [Nest] 270282  - 12/19/2025, 11:01:00 AM     LOG [InterPixService] ✅ Encontradas 1 cobranças
+0|otsem-api  | 2025-12-19T11:01:01: [Nest] 270282  - 12/19/2025, 11:01:01 AM     LOG [InterPixService] 🔄 Reconciliação concluída: 0 processadas, 1 j

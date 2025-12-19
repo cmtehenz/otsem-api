@@ -1201,13 +1201,30 @@ export class InterPixService {
                 },
             });
             const pixData = response.data;
+            const codigoSolicitacao = pixData.codigoSolicitacao;
 
-            const endToEndId = pixData.endToEndId || pixData.e2eId;
-            this.logger.log(`✅ Micro-transferência enviada: ${endToEndId}`);
+            this.logger.log(`✅ Micro-transferência enviada: codigoSolicitacao=${codigoSolicitacao}`);
             this.logger.debug(`📦 Resposta completa da API Inter:`, JSON.stringify(pixData, null, 2));
 
-            // 6. Verificar dados do destinatário retornados pelo banco
-            const destinatario = pixData.destinatario || pixData.recebedor || {};
+            // 6. Consultar status do pagamento para obter dados do destinatário
+            let destinatario: any = {};
+            let endToEndId = '';
+            
+            // Aguardar 2 segundos para processamento
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            try {
+                const statusResponse = await axios.get(`/banking/v2/pix/${codigoSolicitacao}`);
+                const statusData = statusResponse.data;
+                this.logger.debug(`📦 Status do pagamento:`, JSON.stringify(statusData, null, 2));
+                
+                destinatario = statusData.destinatario || statusData.recebedor || {};
+                endToEndId = statusData.endToEndId || statusData.e2eId || codigoSolicitacao;
+            } catch (statusError: any) {
+                this.logger.warn(`⚠️ Não foi possível consultar status: ${statusError.message}`);
+                endToEndId = codigoSolicitacao;
+            }
+            
             this.logger.debug(`👤 Dados do destinatário:`, JSON.stringify(destinatario, null, 2));
             
             const cpfDestinatario = destinatario.cpfCnpj || destinatario.cpf || destinatario.documento || '';
