@@ -735,6 +735,218 @@ export class InterPixService {
         return payload + crc;
     }
 
+    // ==================== RECONCILIAÇÃO ====================
+
+    /**
+     * 🔄 Listar cobranças PIX do Inter (para reconciliação)
+     * Lista cobranças dos últimos N dias
+     */
+    async listCobrancas(dias: number = 7): Promise<any> {
+        this.logger.log(`🔄 Listando cobranças PIX dos últimos ${dias} dias...`);
+
+        try {
+            const axios = this.authService.getAxiosInstance();
+            
+            const dataFim = new Date();
+            const dataInicio = new Date();
+            dataInicio.setDate(dataInicio.getDate() - dias);
+            
+            const params = {
+                inicio: dataInicio.toISOString(),
+                fim: dataFim.toISOString(),
+            };
+
+            const response = await axios.get('/pix/v2/cob', { params });
+            
+            this.logger.log(`✅ Encontradas ${response.data.cobs?.length || 0} cobranças`);
+            return response.data;
+        } catch (error: any) {
+            this.logger.error('❌ Erro ao listar cobranças:', error.response?.data);
+            throw new BadRequestException(
+                error.response?.data?.message || 'Erro ao listar cobranças',
+            );
+        }
+    }
+
+    /**
+     * 🔄 Reconciliar cobranças PIX pendentes
+     * Verifica cobranças pagas no Inter que não foram creditadas localmente
+     */
+    async reconciliarCobrancas(dias: number = 7): Promise<{
+        processadas: number;
+        jaProcessadas: number;
+        pendentes: number;
+        erros: string[];
+        detalhes: any[];
+    }> {
+        this.logger.log(`🔄 Iniciando reconciliação de cobranças dos últimos ${dias} dias...`);
+
+        const resultado = {
+            processadas: 0,
+            jaProcessadas: 0,
+            pendentes: 0,
+            erros: [] as string[],
+            detalhes: [] as any[],
+        };
+
+        try {
+            const cobrancasData = await this.listCobrancas(dias);
+            const cobrancas = cobrancasData.cobs || [];
+
+            for (const cob of cobrancas) {
+                const txid = cob.txid;
+                const status = cob.status;
+
+                // Só processar cobranças concluídas (pagas)
+                if (status !== 'CONCLUIDA') {
+                    if (status === 'ATIVA') {
+                        resultado.pendentes++;
+                    }
+                    continue;
+                }
+
+                // Verificar se já foi processada
+                const existingTx = await this.prisma.transaction.findFirst({
+                    where: {
+                        OR: [
+                            { txid },
+                            { externalId: txid },
+                        ],
+                        status: 'COMPLETED',
+                    },
+                });
+
+                if (existingTx) {
+                    resultado.jaProcessadas++;
+                    resultado.detalhes.push({
+                        txid,
+                        status: 'JA_PROCESSADA',
+                        transactionId: existingTx.id,
+                    });
+                    continue;
+                }
+
+                // Buscar detalhes da cobrança para obter dados do pagador
+                try {
+                    const cobDetalhes = await this.getCobranca(txid);
+                    
+                    // Extrair customerId do txid (formato: OTSEM + customerId curto + timestamp)
+                    let customerId: string | null = null;
+                    if (txid.startsWith('OTSEM') && txid.length >= 17) {
+                        const shortId = txid.substring(5, 17);
+                        // Buscar customer pelo ID que começa com esse shortId
+                        const customer = await this.prisma.customer.findFirst({
+                            where: {
+                                id: { startsWith: shortId.toLowerCase() },
+                            },
+                        });
+                        if (customer) {
+                            customerId = customer.id;
+                        }
+                    }
+
+                    // Se não encontrou pelo txid, tentar buscar transaction PENDING existente
+                    if (!customerId) {
+                        const pendingTx = await this.prisma.transaction.findFirst({
+                            where: {
+                                OR: [
+                                    { txid },
+                                    { externalId: txid },
+                                ],
+                                status: 'PENDING',
+                            },
+                            include: { account: true },
+                        });
+
+                        if (pendingTx?.account?.customerId) {
+                            customerId = pendingTx.account.customerId;
+                        }
+                    }
+
+                    if (!customerId) {
+                        resultado.erros.push(`txid ${txid}: Customer não identificado`);
+                        resultado.detalhes.push({
+                            txid,
+                            status: 'ERRO',
+                            erro: 'Customer não identificado',
+                            cobDetalhes,
+                        });
+                        continue;
+                    }
+
+                    // Buscar conta do customer
+                    const account = await this.prisma.account.findUnique({
+                        where: { customerId },
+                    });
+
+                    if (!account) {
+                        resultado.erros.push(`txid ${txid}: Conta não encontrada para customer ${customerId}`);
+                        continue;
+                    }
+
+                    // Extrair valor e dados do pagador
+                    const valor = parseFloat(cobDetalhes.valor?.original || '0');
+                    const pix = cobDetalhes.pix?.[0];
+                    const pagadorNome = pix?.pagador?.nome || cobDetalhes.devedor?.nome || 'Pagador não identificado';
+                    const pagadorCpf = pix?.pagador?.cpf || cobDetalhes.devedor?.cpf || '';
+                    const endToEnd = pix?.endToEndId || '';
+
+                    // Creditar na conta
+                    const balanceBefore = account.balance;
+                    const balanceAfter = balanceBefore.add(new Prisma.Decimal(valor));
+
+                    await this.prisma.$transaction([
+                        this.prisma.account.update({
+                            where: { id: account.id },
+                            data: { balance: balanceAfter },
+                        }),
+                        this.prisma.transaction.create({
+                            data: {
+                                accountId: account.id,
+                                type: 'PIX_IN',
+                                status: 'COMPLETED',
+                                amount: new Prisma.Decimal(valor),
+                                txid,
+                                endToEnd,
+                                externalId: txid,
+                                description: `Depósito PIX de ${pagadorNome} (reconciliado)`,
+                                payerName: pagadorNome,
+                                payerTaxNumber: pagadorCpf,
+                                balanceBefore,
+                                balanceAfter,
+                                externalData: cobDetalhes as any,
+                            },
+                        }),
+                    ]);
+
+                    resultado.processadas++;
+                    resultado.detalhes.push({
+                        txid,
+                        status: 'PROCESSADA',
+                        customerId,
+                        valor,
+                        pagadorNome,
+                    });
+
+                    this.logger.log(`✅ Reconciliado: ${txid} - R$ ${valor} para ${customerId}`);
+                } catch (err: any) {
+                    resultado.erros.push(`txid ${txid}: ${err.message}`);
+                    resultado.detalhes.push({
+                        txid,
+                        status: 'ERRO',
+                        erro: err.message,
+                    });
+                }
+            }
+
+            this.logger.log(`🔄 Reconciliação concluída: ${resultado.processadas} processadas, ${resultado.jaProcessadas} já processadas, ${resultado.pendentes} pendentes, ${resultado.erros.length} erros`);
+            return resultado;
+        } catch (error: any) {
+            this.logger.error('❌ Erro na reconciliação:', error.message);
+            throw error;
+        }
+    }
+
     /**
      * 🔢 Calcular CRC16-CCITT-FALSE para validação do BRCode
      * Implementação baseada na referência do Banco Central

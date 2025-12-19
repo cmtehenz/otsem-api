@@ -2519,6 +2519,33 @@
         "tags": [
           "💸 Pix (Inter)"
         ]
+      },
+      "get": {
+        "operationId": "InterPixController_listCobrancas",
+        "parameters": [
+          {
+            "name": "dias",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "🔄 Listar cobranças PIX dos últimos N dias",
+        "tags": [
+          "💸 Pix (Inter)"
+        ]
       }
     },
     "/inter/pix/cobrancas/{txid}": {
@@ -2605,6 +2632,36 @@
           }
         ],
         "summary": "🔬 Testar envio Pix (direto para Inter)",
+        "tags": [
+          "💸 Pix (Inter)"
+        ]
+      }
+    },
+    "/inter/pix/reconciliar": {
+      "post": {
+        "description": "Verifica cobranças pagas no Inter que não foram creditadas e processa automaticamente.",
+        "operationId": "InterPixController_reconciliarCobrancas",
+        "parameters": [
+          {
+            "name": "dias",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "🔄 Reconciliar cobranças PIX pendentes",
         "tags": [
           "💸 Pix (Inter)"
         ]

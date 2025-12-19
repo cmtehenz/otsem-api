@@ -107,4 +107,25 @@ export class InterPixController {
             idIdempotente,
         });
     }
+
+    // ==================== RECONCILIAÇÃO ====================
+
+    @Get('cobrancas')
+    @Roles(Role.ADMIN)
+    @ApiOperation({ summary: '🔄 Listar cobranças PIX dos últimos N dias' })
+    async listCobrancas(@Query('dias') dias?: string) {
+        const numDias = dias ? parseInt(dias, 10) : 7;
+        return this.pixService.listCobrancas(numDias);
+    }
+
+    @Post('reconciliar')
+    @Roles(Role.ADMIN)
+    @ApiOperation({ 
+        summary: '🔄 Reconciliar cobranças PIX pendentes',
+        description: 'Verifica cobranças pagas no Inter que não foram creditadas e processa automaticamente.'
+    })
+    async reconciliarCobrancas(@Query('dias') dias?: string) {
+        const numDias = dias ? parseInt(dias, 10) : 7;
+        return this.pixService.reconciliarCobrancas(numDias);
+    }
 }
