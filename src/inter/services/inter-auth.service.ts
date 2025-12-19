@@ -164,7 +164,7 @@ export class InterAuthService {
                     client_id: this.CLIENT_ID!,
                     client_secret: this.CLIENT_SECRET!,
                     grant_type: 'client_credentials',
-                    scope: 'extrato.read boleto-cobranca.read boleto-cobranca.write cob.read cob.write cobv.read cobv.write pix.read pix.write webhook.read webhook.write pagamento-pix.write',
+                    scope: 'extrato.read boleto-cobranca.read boleto-cobranca.write cob.read cob.write cobv.read cobv.write pix.read pix.write webhook.read webhook.write pagamento-pix.write pagamento-pix.read',
                 }),
                 {
                     httpsAgent: this.httpsAgent!,
@@ -185,16 +185,16 @@ export class InterAuthService {
         return this.isConfigured;
     }
 
-    getAxiosInstance() { 
+    getAxiosInstance() {
         if (!this.isConfigured) {
             throw new Error('Inter API not configured - certificates not found');
         }
-        return this.axiosInstance!; 
+        return this.axiosInstance!;
     }
-    getHttpsAgent() { 
+    getHttpsAgent() {
         if (!this.isConfigured) {
             throw new Error('Inter API not configured - certificates not found');
         }
-        return this.httpsAgent!; 
+        return this.httpsAgent!;
     }
 }
