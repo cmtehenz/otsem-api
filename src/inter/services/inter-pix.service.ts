@@ -1220,6 +1220,7 @@ export class InterPixService {
                 const statusResponse = await axios.get(`/banking/v2/pix/${codigoSolicitacao}`);
                 const statusData = statusResponse.data;
                 this.logger.debug(`📦 Status do pagamento:`, JSON.stringify(statusData, null, 2));
+                this.logger.debug(`📦 Status (objeto bruto) recebido do Inter:`, statusData);
                 
                 destinatario = statusData.destinatario || statusData.recebedor || {};
                 endToEndId = statusData.endToEndId || statusData.e2eId || codigoSolicitacao;
