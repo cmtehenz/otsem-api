@@ -191,6 +191,17 @@ export class WalletService {
       throw new Error('Saldo insuficiente em BRL (mínimo R$10)');
     }
 
+    // Spread configurável por usuário (default: 1.0 = sem spread). Campo está em User.spreadValue
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { user: { select: { spreadValue: true } } },
+    });
+    const spreadRateRaw = customer?.user?.spreadValue ? Number(customer.user.spreadValue) : 1;
+    const spreadRate = Number.isFinite(spreadRateRaw) && spreadRateRaw > 0 ? spreadRateRaw : 1;
+
+    const brlToExchange = Number((brlAmount * spreadRate).toFixed(2));
+    const spreadAmount = Number((brlAmount - brlToExchange).toFixed(2));
+
     const pixResult = await this.interPixService.sendPix(customerId, {
       valor: brlAmount,
       chaveDestino: '50459025000126',
@@ -199,7 +210,30 @@ export class WalletService {
     });
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
-    const okxBuyResult = await this.okxService.buyUsdtWithBrl(brlAmount);
+    const okxBuyResult = await this.okxService.buyUsdtWithBrl(brlToExchange);
+
+    // Anexa informações de spread no Payment relacionado ao endToEnd da saída PIX
+    if (pixResult?.endToEndId) {
+      const payment = await this.prisma.payment.findUnique({ where: { endToEnd: pixResult.endToEndId } });
+      if (payment) {
+        const bankPayload = (payment.bankPayload as any) || {};
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            bankPayload: {
+              ...bankPayload,
+              spread: {
+                chargedBrl: brlAmount,
+                exchangedBrl: brlToExchange,
+                spreadBrl: spreadAmount,
+                spreadRate,
+              },
+              okxBuyResult,
+            },
+          },
+        });
+      }
+    }
 
     let wallet;
     if (walletId) {
@@ -226,6 +260,12 @@ export class WalletService {
       pixResult,
       okxBuyResult,
       withdrawResult,
+      spread: {
+        chargedBrl: brlAmount,
+        exchangedBrl: brlToExchange,
+        spreadBrl: spreadAmount,
+        spreadRate,
+      },
       wallet: { id: wallet.id, network: wallet.network, address: wallet.externalAddress },
     };
   }
