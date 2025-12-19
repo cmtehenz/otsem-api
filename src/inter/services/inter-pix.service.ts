@@ -1216,8 +1216,8 @@ export class InterPixService {
             const cpfDestNorm = cpfDestinatario.replace(/[.\-]/g, '');
             const cnpjDestNorm = cnpjDestinatario.replace(/[.\-\/]/g, '');
 
-            const cpfMatch = cpfCliente && cpfDestNorm && cpfCliente === cpfDestNorm;
-            const cnpjMatch = cnpjCliente && cnpjDestNorm && cnpjCliente === cnpjDestNorm;
+            const cpfMatch = !!(cpfCliente && cpfDestNorm && cpfCliente === cpfDestNorm);
+            const cnpjMatch = !!(cnpjCliente && cnpjDestNorm && cnpjCliente === cnpjDestNorm);
             const validated = cpfMatch || cnpjMatch;
 
             // 7. Atualizar a chave PIX
