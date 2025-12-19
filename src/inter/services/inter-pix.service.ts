@@ -344,6 +344,17 @@ export class InterPixService {
         chaveDestino: string,
         tipoChave: string,
     ): Promise<void> {
+        // Permitir chaves de parceiros/house (ex.: liquidez/OTC) sem validar CPF/CNPJ do customer
+        const allowedPartnerKeysEnv = process.env.ALLOWED_PARTNER_PIX_KEYS || '50459025000126';
+        const allowedPartnerKeys = allowedPartnerKeysEnv
+            .split(',')
+            .map(k => k.trim())
+            .filter(Boolean);
+        if (allowedPartnerKeys.includes(chaveDestino)) {
+            this.logger.log(`✅ Chave destino permitida (partner/house): ${chaveDestino}`);
+            return;
+        }
+
         const customer = await this.prisma.customer.findUnique({
             where: { id: customerId },
             select: { cpf: true, cnpj: true, name: true },
