@@ -278,6 +278,10 @@ model PixKey {
   externalKeyId String? @unique
   accountType   String?
 
+  // Campo de validação: true se a chave pertence ao CPF/CNPJ do customer
+  validated   Boolean   @default(false)
+  validatedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

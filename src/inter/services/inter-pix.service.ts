@@ -336,8 +336,9 @@ export class InterPixService {
     }
 
     /**
-     * ✅ Validar que a chave destino é do próprio customer (CPF ou CNPJ)
-     * PIX só pode ser enviado para o mesmo CPF/CNPJ do titular da conta
+     * ✅ Validar que a chave destino é do próprio customer
+     * Usa o campo "validated" da tabela PixKey para simplificar a lógica
+     * PIX só pode ser enviado para chaves validadas (pertencentes ao CPF/CNPJ do customer)
      */
     private async validateDestinationKey(
         customerId: string,
@@ -346,52 +347,56 @@ export class InterPixService {
     ): Promise<void> {
         const customer = await this.prisma.customer.findUnique({
             where: { id: customerId },
-            select: { cpf: true, cnpj: true, type: true, name: true },
+            select: { cpf: true, cnpj: true, name: true },
         });
 
         if (!customer) {
             throw new BadRequestException('Cliente não encontrado');
         }
 
-        // Normaliza a chave destino (remove pontuação)
-        const chaveNormalizada = chaveDestino.replace(/[.\-\/]/g, '');
+        // Normaliza a chave destino
+        const chaveNormalizada = chaveDestino.replace(/[.\-\/\s\+]/g, '').toLowerCase();
 
-        // Verifica se é CPF ou CNPJ
-        if (tipoChave === 'CPF') {
-            const cpfNormalizado = customer.cpf?.replace(/[.\-]/g, '') || '';
-            if (chaveNormalizada !== cpfNormalizado) {
-                throw new BadRequestException(
-                    'Você só pode enviar PIX para o seu próprio CPF cadastrado.',
-                );
-            }
-            this.logger.log(`✅ Chave destino CPF validada para ${customer.name}`);
-        } else if (tipoChave === 'CNPJ') {
-            const cnpjNormalizado = customer.cnpj?.replace(/[.\-\/]/g, '') || '';
-            if (chaveNormalizada !== cnpjNormalizado) {
-                throw new BadRequestException(
-                    'Você só pode enviar PIX para o seu próprio CNPJ cadastrado.',
-                );
-            }
-            this.logger.log(`✅ Chave destino CNPJ validada para ${customer.name}`);
-        } else {
-            // Para outros tipos de chave (EMAIL, TELEFONE, CHAVE_ALEATORIA)
-            // Também precisam ser validados contra as chaves do customer
-            const pixKey = await this.prisma.pixKey.findFirst({
-                where: {
-                    customerId,
-                    keyValue: chaveDestino,
-                    status: 'ACTIVE',
-                },
-            });
+        // 1. Primeiro verifica se existe chave cadastrada e validada na tabela PixKey
+        const pixKey = await this.prisma.pixKey.findFirst({
+            where: {
+                customerId,
+                keyValue: chaveDestino,
+                status: 'ACTIVE',
+            },
+        });
 
-            if (!pixKey) {
+        if (pixKey) {
+            if (pixKey.validated) {
+                this.logger.log(`✅ Chave ${tipoChave} validada via PixKey para ${customer.name}`);
+                return;
+            } else {
                 throw new BadRequestException(
-                    'Você só pode enviar PIX para chaves cadastradas em seu nome. ' +
-                    'Use seu CPF, CNPJ, email ou telefone cadastrado.',
+                    'Esta chave PIX não está validada. Apenas chaves que pertencem ao seu CPF/CNPJ podem ser usadas para envio.',
                 );
             }
-            this.logger.log(`✅ Chave destino ${tipoChave} validada para ${customer.name}`);
         }
+
+        // 2. Fallback: Verifica diretamente se é CPF ou CNPJ do customer
+        if (tipoChave === 'CPF') {
+            const cpfNormalizado = customer.cpf?.replace(/[.\-]/g, '').toLowerCase() || '';
+            if (chaveNormalizada === cpfNormalizado) {
+                this.logger.log(`✅ Chave destino CPF validada diretamente para ${customer.name}`);
+                return;
+            }
+        } else if (tipoChave === 'CNPJ') {
+            const cnpjNormalizado = customer.cnpj?.replace(/[.\-\/]/g, '').toLowerCase() || '';
+            if (chaveNormalizada === cnpjNormalizado) {
+                this.logger.log(`✅ Chave destino CNPJ validada diretamente para ${customer.name}`);
+                return;
+            }
+        }
+
+        // 3. Chave não encontrada ou não validada
+        throw new BadRequestException(
+            'Você só pode enviar PIX para chaves cadastradas e validadas em seu nome. ' +
+            'Cadastre a chave primeiro em /pix-keys para validação automática.',
+        );
     }
 
     private async validateBalance(customerId: string, valor: number) {

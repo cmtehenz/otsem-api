@@ -2723,6 +2723,75 @@
         ]
       }
     },
+    "/pix-keys": {
+      "get": {
+        "operationId": "PixKeysController_getMyKeys",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de chaves PIX com status de validação"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar chaves PIX do usuário logado",
+        "tags": [
+          "PIX Keys"
+        ]
+      },
+      "post": {
+        "operationId": "PixKeysController_createKey",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "keyType",
+                  "keyValue"
+                ],
+                "properties": {
+                  "keyType": {
+                    "type": "string",
+                    "enum": [
+                      "CPF",
+                      "CNPJ",
+                      "EMAIL",
+                      "PHONE",
+                      "RANDOM"
+                    ],
+                    "description": "Tipo da chave PIX"
+                  },
+                  "keyValue": {
+                    "type": "string",
+                    "description": "Valor da chave (CPF, CNPJ, email, telefone ou UUID)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chave criada. Campo validated indica se pertence ao CPF/CNPJ do titular"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cadastrar nova chave PIX",
+        "tags": [
+          "PIX Keys"
+        ]
+      }
+    },
     "/pix-keys/customer/{customerId}": {
       "get": {
         "operationId": "PixKeysController_getKeysByCustomer",
@@ -2741,8 +2810,94 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar chaves PIX por customer (Admin)",
         "tags": [
-          "PixKeys"
+          "PIX Keys"
+        ]
+      }
+    },
+    "/pix-keys/{id}/status": {
+      "patch": {
+        "operationId": "PixKeysController_updateKeyStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "ACTIVE",
+                      "INACTIVE",
+                      "BLOCKED"
+                    ],
+                    "description": "Novo status da chave"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualizar status da chave PIX (Admin)",
+        "tags": [
+          "PIX Keys"
+        ]
+      }
+    },
+    "/pix-keys/{id}": {
+      "delete": {
+        "operationId": "PixKeysController_deleteKey",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Excluir chave PIX",
+        "tags": [
+          "PIX Keys"
         ]
       }
     },

@@ -101,11 +101,30 @@ Legacy models (Deposit, Payment) are kept for backward compatibility.
 - `GET /transactions?limit=6` - List customer transactions with optional limit
 - Returns type (PIX_IN/PIX_OUT), amount, description, payerName, createdAt
 
+### PIX Key Management with Auto-Validation (Dec 19)
+New endpoints for managing PIX keys with automatic validation:
+- `GET /pix-keys` - List customer's PIX keys with validation status
+- `POST /pix-keys` - Create new PIX key with automatic validation
+- `DELETE /pix-keys/:id` - Delete PIX key
+
+PixKey model now includes:
+- `validated` (boolean) - true if key belongs to customer's CPF/CNPJ
+- `validatedAt` (DateTime) - when validation occurred
+
+Auto-validation rules:
+- CPF key: validated if matches customer's CPF
+- CNPJ key: validated if matches customer's CNPJ
+- EMAIL key: validated if matches customer's email
+- PHONE key: validated if matches customer's phone
+- RANDOM key: requires manual validation
+
 ### PIX Send Validation (Dec 19)
 - **KYC Required**: `accountStatus` must be `approved` to send PIX
-- **Same CPF/CNPJ**: PIX can only be sent to the customer's own CPF or CNPJ
+- **Same CPF/CNPJ**: PIX can only be sent to validated keys (or directly to CPF/CNPJ)
 - **Balance Check**: Validates sufficient balance before sending
 - **Limits Check**: Daily and monthly limits validated
+- Uses PixKey.validated field for faster validation
+- Fallback to direct CPF/CNPJ comparison if key not registered
 - Clear error messages for each validation failure
 
 ### Unified Transaction Model Refactoring (Dec 16)
