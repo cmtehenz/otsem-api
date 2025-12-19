@@ -331,4 +331,51 @@ export class OkxService {
             brlReceived
         };
     }
+
+    /**
+     * Obtém endereço de depósito USDT para uma rede específica
+     * @param network 'Solana' | 'TRC20' (Tron)
+     */
+    async getDepositAddress(network: 'Solana' | 'TRC20'): Promise<{ address: string; chain: string; memo?: string }> {
+        const method = 'GET';
+        const requestPath = `/api/v5/asset/deposit-address?ccy=USDT`;
+        const body = '';
+        const headers = this.authService.getAuthHeaders(method, requestPath, body);
+        const apiUrl = process.env.OKX_API_URL || 'https://www.okx.com';
+
+        const response = await axios.get(`${apiUrl}${requestPath}`, { headers });
+        const addresses = response.data?.data || [];
+
+        const chainMap: Record<string, string> = {
+            'Solana': 'USDT-Solana',
+            'TRC20': 'USDT-TRC20'
+        };
+
+        const targetChain = chainMap[network];
+        const found = addresses.find((a: any) => a.chain === targetChain);
+
+        if (!found) {
+            throw new Error(`Endereço de depósito não encontrado para ${network}`);
+        }
+
+        return {
+            address: found.addr,
+            chain: found.chain,
+            memo: found.memo || undefined
+        };
+    }
+
+    /**
+     * Lista depósitos recentes de USDT
+     */
+    async getRecentDeposits(): Promise<any[]> {
+        const method = 'GET';
+        const requestPath = '/api/v5/asset/deposit-history?ccy=USDT';
+        const body = '';
+        const headers = this.authService.getAuthHeaders(method, requestPath, body);
+        const apiUrl = process.env.OKX_API_URL || 'https://www.okx.com';
+
+        const response = await axios.get(`${apiUrl}${requestPath}`, { headers });
+        return response.data?.data || [];
+    }
 }

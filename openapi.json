@@ -2730,8 +2730,9 @@
             "description": ""
           }
         },
+        "summary": "Saldo BRL na OKX",
         "tags": [
-          "Okx"
+          "OKX"
         ]
       }
     },
@@ -2744,8 +2745,9 @@
             "description": ""
           }
         },
+        "summary": "Saldo USDT na OKX",
         "tags": [
-          "Okx"
+          "OKX"
         ]
       }
     },
@@ -2758,8 +2760,9 @@
             "description": ""
           }
         },
+        "summary": "Comprar USDT com BRL e retornar detalhes",
         "tags": [
-          "Okx"
+          "OKX"
         ]
       }
     },
@@ -2772,8 +2775,52 @@
             "description": ""
           }
         },
+        "summary": "Sacar USDT para endereço externo",
         "tags": [
-          "Okx"
+          "OKX"
+        ]
+      }
+    },
+    "/okx/deposit-address": {
+      "get": {
+        "operationId": "OkxController_getDepositAddress",
+        "parameters": [
+          {
+            "name": "network",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "Solana",
+                "TRC20"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Endereço de depósito USDT (Solana ou Tron)",
+        "tags": [
+          "OKX"
+        ]
+      }
+    },
+    "/okx/deposits": {
+      "get": {
+        "operationId": "OkxController_getRecentDeposits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Lista depósitos recentes de USDT",
+        "tags": [
+          "OKX"
         ]
       }
     },
