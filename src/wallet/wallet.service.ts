@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { InterPixService } from '../inter/services/inter-pix.service';
 import { PixKeyType } from '../inter/dto/send-pix.dto';
 import { OkxService } from '../okx/services/okx.service';
-import { WalletNetwork } from '@prisma/client';
+import { WalletNetwork, TransactionType } from '@prisma/client';
 
 @Injectable()
 export class WalletService {
@@ -213,12 +213,13 @@ export class WalletService {
     let withdrawResult: any = null;
 
     try {
-      // 1) PIX para conta OKX
+      // 1) PIX para conta OKX (com tipo CONVERSION)
       pixResult = await this.interPixService.sendPix(customerId, {
         valor: brlAmount,
         chaveDestino: '50459025000126',
         tipoChave: PixKeyType.CHAVE,
-        descricao: customerId,
+        descricao: `Conversão BRL→USDT - ${customerId}`,
+        transactionType: TransactionType.CONVERSION,
       });
       stages.pixTransfer = 'done';
 

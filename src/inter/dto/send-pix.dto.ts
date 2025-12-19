@@ -2,6 +2,7 @@
 
 import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, Min, IsEnum, MaxLength } from 'class-validator';
+import { TransactionType } from '@prisma/client';
 
 export enum PixKeyType {
     CPF = 'CPF',
@@ -9,8 +10,10 @@ export enum PixKeyType {
     EMAIL = 'EMAIL',
     TELEFONE = 'TELEFONE',
     CHAVE_ALEATORIA = 'CHAVE_ALEATORIA',
-    CHAVE = 'CHAVE', // <-- Adicione esta linha!
+    CHAVE = 'CHAVE',
 }
+
+export { TransactionType };
 
 export class SendPixDto {
     @ApiProperty({
@@ -54,6 +57,10 @@ export class SendPixDto {
     @IsOptional()
     @IsString()
     nomeFavorecido?: string;
+
+    @ApiHideProperty()
+    @IsOptional()
+    transactionType?: TransactionType;
 }
 
 export class PixPaymentResponseDto {

@@ -68,7 +68,7 @@ Available at `http://localhost:5000/api/docs` when running.
 
 ### Unified Transaction Model (Dec 16, 2025)
 The system uses a **unified Transaction model** for all PIX operations:
-- **TransactionType**: PIX_IN (deposits), PIX_OUT (withdrawals), TRANSFER, ADJUSTMENT
+- **TransactionType**: PIX_IN (deposits), PIX_OUT (withdrawals), CONVERSION (BRL→USDT), TRANSFER, ADJUSTMENT, FEE, REVERSAL
 - **TransactionStatus**: PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED, REVERSED
 
 Transaction fields:
@@ -85,6 +85,12 @@ Transaction fields:
 Legacy models (Deposit, Payment) are kept for backward compatibility.
 
 ## Recent Changes (Dec 2025)
+
+### CONVERSION Transaction Type (Dec 19)
+- Added `CONVERSION` to TransactionType enum for BRL→USDT conversions
+- `POST /wallet/buy-usdt-with-brl` now records transactions as `CONVERSION` type
+- This differentiates conversions from regular `PIX_OUT` payments
+- SendPixDto now accepts optional `transactionType` parameter
 
 ### PIX Polling & Automatic Reconciliation (Dec 19)
 - **Automatic polling every 1 minute**: Checks Inter API for paid PIX charges

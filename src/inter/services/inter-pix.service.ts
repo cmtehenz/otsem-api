@@ -515,6 +515,8 @@ export class InterPixService {
         const endToEnd =
             pixData.endToEndId || pixData.e2eId || `PIX-${Date.now()}`;
 
+        const txType = dto.transactionType || TransactionType.PIX_OUT;
+
         await this.prisma.$transaction([
             this.prisma.payment.create({
                 data: {
@@ -536,7 +538,7 @@ export class InterPixService {
             this.prisma.transaction.create({
                 data: {
                     accountId: account.id,
-                    type: TransactionType.PIX_OUT,
+                    type: txType,
                     status: 'COMPLETED',
                     amount: valorDecimal,
                     balanceBefore,
@@ -549,7 +551,7 @@ export class InterPixService {
             }),
         ]);
 
-        this.logger.log(`✅ Pagamento registrado: ${endToEnd}`);
+        this.logger.log(`✅ Pagamento registrado: ${endToEnd} (tipo: ${txType})`);
     }
 
     private async createFailedPayment(

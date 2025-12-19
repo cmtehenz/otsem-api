@@ -104,6 +104,7 @@ enum TransactionType {
   TRANSFER_OUT
   PIX_IN
   PIX_OUT
+  CONVERSION
   FEE
   REVERSAL
 }
