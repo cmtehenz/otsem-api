@@ -196,6 +196,11 @@ export class InterPixService {
 
     /**
      * 💸 Enviar Pix para chave
+     * Validações:
+     * 1. KYC aprovado (accountStatus = approved)
+     * 2. Chave destino = CPF ou CNPJ do customer
+     * 3. Saldo suficiente
+     * 4. Limites diário/mensal
      */
     async sendPix(
         customerId: string,
@@ -209,10 +214,16 @@ export class InterPixService {
             throw new BadRequestException('customerId não informado');
         }
 
-        // ✅ 1. Validar saldo
+        // ✅ 1. Validar KYC aprovado
+        await this.validateKyc(customerId);
+
+        // ✅ 2. Validar que a chave destino é do próprio customer (CPF ou CNPJ)
+        await this.validateDestinationKey(customerId, dto.chaveDestino, dto.tipoChave);
+
+        // ✅ 3. Validar saldo
         await this.validateBalance(customerId, dto.valor);
 
-        // ✅ 2. Validar limites
+        // ✅ 4. Validar limites
         await this.validateLimits(customerId, dto.valor);
 
         try {
@@ -294,6 +305,94 @@ export class InterPixService {
     }
 
     // ==================== VALIDAÇÕES ====================
+
+    /**
+     * ✅ Validar KYC aprovado
+     */
+    private async validateKyc(customerId: string): Promise<void> {
+        const customer = await this.prisma.customer.findUnique({
+            where: { id: customerId },
+            select: { accountStatus: true, name: true },
+        });
+
+        if (!customer) {
+            throw new BadRequestException('Cliente não encontrado');
+        }
+
+        if (customer.accountStatus !== 'approved') {
+            const statusMessages: Record<string, string> = {
+                not_requested: 'Você precisa iniciar a verificação de identidade (KYC) antes de enviar PIX.',
+                requested: 'Sua verificação de identidade (KYC) está pendente. Aguarde a aprovação.',
+                in_review: 'Sua verificação de identidade (KYC) está em análise. Aguarde a aprovação.',
+                rejected: 'Sua verificação de identidade (KYC) foi rejeitada. Entre em contato com o suporte.',
+                suspended: 'Sua conta está suspensa. Entre em contato com o suporte.',
+            };
+
+            const message = statusMessages[customer.accountStatus] || 'Conta não aprovada para envio de PIX.';
+            throw new BadRequestException(message);
+        }
+
+        this.logger.log(`✅ KYC aprovado para ${customer.name}`);
+    }
+
+    /**
+     * ✅ Validar que a chave destino é do próprio customer (CPF ou CNPJ)
+     * PIX só pode ser enviado para o mesmo CPF/CNPJ do titular da conta
+     */
+    private async validateDestinationKey(
+        customerId: string,
+        chaveDestino: string,
+        tipoChave: string,
+    ): Promise<void> {
+        const customer = await this.prisma.customer.findUnique({
+            where: { id: customerId },
+            select: { cpf: true, cnpj: true, type: true, name: true },
+        });
+
+        if (!customer) {
+            throw new BadRequestException('Cliente não encontrado');
+        }
+
+        // Normaliza a chave destino (remove pontuação)
+        const chaveNormalizada = chaveDestino.replace(/[.\-\/]/g, '');
+
+        // Verifica se é CPF ou CNPJ
+        if (tipoChave === 'CPF') {
+            const cpfNormalizado = customer.cpf?.replace(/[.\-]/g, '') || '';
+            if (chaveNormalizada !== cpfNormalizado) {
+                throw new BadRequestException(
+                    'Você só pode enviar PIX para o seu próprio CPF cadastrado.',
+                );
+            }
+            this.logger.log(`✅ Chave destino CPF validada para ${customer.name}`);
+        } else if (tipoChave === 'CNPJ') {
+            const cnpjNormalizado = customer.cnpj?.replace(/[.\-\/]/g, '') || '';
+            if (chaveNormalizada !== cnpjNormalizado) {
+                throw new BadRequestException(
+                    'Você só pode enviar PIX para o seu próprio CNPJ cadastrado.',
+                );
+            }
+            this.logger.log(`✅ Chave destino CNPJ validada para ${customer.name}`);
+        } else {
+            // Para outros tipos de chave (EMAIL, TELEFONE, CHAVE_ALEATORIA)
+            // Também precisam ser validados contra as chaves do customer
+            const pixKey = await this.prisma.pixKey.findFirst({
+                where: {
+                    customerId,
+                    keyValue: chaveDestino,
+                    status: 'ACTIVE',
+                },
+            });
+
+            if (!pixKey) {
+                throw new BadRequestException(
+                    'Você só pode enviar PIX para chaves cadastradas em seu nome. ' +
+                    'Use seu CPF, CNPJ, email ou telefone cadastrado.',
+                );
+            }
+            this.logger.log(`✅ Chave destino ${tipoChave} validada para ${customer.name}`);
+        }
+    }
 
     private async validateBalance(customerId: string, valor: number) {
         const account = await this.prisma.account.findUnique({

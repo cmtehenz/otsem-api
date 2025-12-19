@@ -101,6 +101,13 @@ Legacy models (Deposit, Payment) are kept for backward compatibility.
 - `GET /transactions?limit=6` - List customer transactions with optional limit
 - Returns type (PIX_IN/PIX_OUT), amount, description, payerName, createdAt
 
+### PIX Send Validation (Dec 19)
+- **KYC Required**: `accountStatus` must be `approved` to send PIX
+- **Same CPF/CNPJ**: PIX can only be sent to the customer's own CPF or CNPJ
+- **Balance Check**: Validates sufficient balance before sending
+- **Limits Check**: Daily and monthly limits validated
+- Clear error messages for each validation failure
+
 ### Unified Transaction Model Refactoring (Dec 16)
 - Migrated from separate Deposit/Payment models to unified Transaction model
 - New fields: payerName, payerTaxNumber, receiverName, receiverPixKey, endToEnd, txid
