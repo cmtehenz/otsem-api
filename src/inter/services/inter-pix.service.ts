@@ -1234,7 +1234,12 @@ export class InterPixService {
                 };
             }
         } catch (error: any) {
-            const errorMessage = error.response?.data?.message || error.message;
+            const errorData = error.response?.data;
+            const errorMessage = errorData?.message || errorData?.title || error.message;
+            const errorDetail = JSON.stringify(errorData, null, 2);
+            
+            this.logger.error(`❌ Erro na validação: ${errorMessage}`);
+            this.logger.error(`❌ Detalhes do erro: ${errorDetail}`);
             
             // Marcar que tentou validação e falhou
             await this.prisma.pixKey.update({
@@ -1245,8 +1250,6 @@ export class InterPixService {
                     validationError: `Erro na transferência: ${errorMessage}`,
                 },
             });
-
-            this.logger.error(`❌ Erro na validação: ${errorMessage}`);
             
             return {
                 success: false,
