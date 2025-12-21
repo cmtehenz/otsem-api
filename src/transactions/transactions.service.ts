@@ -253,14 +253,12 @@ export class TransactionsService {
 
         return {
             data,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages,
-                hasNext: page < totalPages,
-                hasPrev: page > 1,
-            },
+            total,
+            page,
+            limit,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
         };
     }
 

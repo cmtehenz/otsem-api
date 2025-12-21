@@ -49,7 +49,12 @@ export class TransactionsController {
         if (!account) {
             return {
                 data: [],
-                pagination: { page: 1, limit: 20, total: 0, totalPages: 0, hasNext: false, hasPrev: false },
+                total: 0,
+                page: 1,
+                limit: 20,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
             };
         }
 
