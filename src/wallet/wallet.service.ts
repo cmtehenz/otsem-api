@@ -328,7 +328,22 @@ export class WalletService {
         throw new Error('Não foi possível determinar a quantidade de USDT comprada');
       }
 
-      // 3) Registrar transação CONVERSION separada
+      // 3) Determinar carteira de destino (precisa antes de criar transação)
+      let wallet;
+      if (walletId) {
+        wallet = await this.getWalletById(walletId, customerId);
+      } else {
+        wallet = await this.getMainWallet(customerId, 'SOLANA');
+        if (!wallet) {
+          wallet = await this.getMainWallet(customerId, 'TRON');
+        }
+      }
+
+      if (!wallet || !wallet.externalAddress) {
+        throw new Error('Carteira (Solana ou Tron) não encontrada para o cliente');
+      }
+
+      // 4) Registrar transação CONVERSION com dados da carteira
       const balanceBefore = account.balance;
       await this.prisma.transaction.create({
         data: {
@@ -344,6 +359,8 @@ export class WalletService {
             pixEndToEnd: pixResult?.endToEndId,
             okxBuyResult,
             usdtAmount,
+            walletAddress: wallet.externalAddress,
+            network: wallet.network,
             spread: { chargedBrl: brlAmount, exchangedBrl: brlToExchange, spreadBrl: spreadAmount, spreadRate },
           },
           completedAt: new Date(),
@@ -395,22 +412,7 @@ export class WalletService {
         }
       }
 
-      // 3) Transferência USDT para carteira do cliente
-      let wallet;
-      if (walletId) {
-        wallet = await this.getWalletById(walletId, customerId);
-      } else {
-        // Tentar Solana primeiro, depois Tron
-        wallet = await this.getMainWallet(customerId, 'SOLANA');
-        if (!wallet) {
-          wallet = await this.getMainWallet(customerId, 'TRON');
-        }
-      }
-
-      if (!wallet || !wallet.externalAddress) {
-        throw new Error('Carteira (Solana ou Tron) não encontrada para o cliente');
-      }
-
+      // 5) Transferência USDT para carteira do cliente (wallet já foi determinado acima)
       // Determinar rede e taxa
       const isTron = wallet.network === 'TRON';
       const networkFee = 1; // 1 USDT para ambas as redes
