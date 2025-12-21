@@ -2902,7 +2902,22 @@
             "description": ""
           }
         },
-        "summary": "Sacar USDT para endereço externo",
+        "summary": "Sacar USDT para endereço externo (completo)",
+        "tags": [
+          "OKX"
+        ]
+      }
+    },
+    "/okx/withdraw-simple": {
+      "post": {
+        "operationId": "OkxController_withdrawSimple",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Sacar USDT (simplificado - taxa automática)",
         "tags": [
           "OKX"
         ]

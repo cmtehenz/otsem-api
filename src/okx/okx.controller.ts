@@ -26,7 +26,7 @@ export class OkxController {
     }
 
     @Post('withdraw-usdt')
-    @ApiOperation({ summary: 'Sacar USDT para endereço externo' })
+    @ApiOperation({ summary: 'Sacar USDT para endereço externo (completo)' })
     async safeWithdrawUsdt(@Body() body: {
         amount: string | number;
         toAddress: string;
@@ -42,6 +42,23 @@ export class OkxController {
             fundPwd: body.fundPwd,
             fee: body.fee
         });
+    }
+
+    @Post('withdraw-simple')
+    @ApiOperation({ summary: 'Sacar USDT (simplificado - taxa automática)' })
+    async withdrawSimple(@Body() body: {
+        amount: string | number;
+        address: string;
+        network?: 'Solana' | 'TRC20';
+    }) {
+        const network = body.network || 'TRC20';
+        const fee = network === 'TRC20' ? '2.1' : '1';
+        return await this.okxService.withdrawUsdtSimple(
+            String(body.amount),
+            body.address,
+            network,
+            fee
+        );
     }
 
     @Get('deposit-address')

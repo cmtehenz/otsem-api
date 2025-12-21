@@ -164,6 +164,26 @@ export class OkxService {
         return response.data;
     }
 
+    async withdrawUsdtSimple(amount: string, toAddress: string, network: string, fee: string) {
+        const method = 'POST';
+        const requestPath = '/api/v5/asset/withdrawal';
+        const bodyObj = {
+            ccy: 'USDT',
+            amt: amount,
+            dest: 4,
+            toAddr: toAddress,
+            chain: `USDT-${network}`,
+            fee: fee
+        };
+        const body = JSON.stringify(bodyObj);
+
+        const headers = this.authService.getAuthHeaders(method, requestPath, body);
+
+        const url = `https://www.okx.com${requestPath}`;
+        const response = await axios.post(url, bodyObj, { headers });
+        return response.data;
+    }
+
     async buyBrlAndReturnUsdtBalance(brlAmount: number) {
         await this.buyUsdtWithBrl(brlAmount);
         // Aguarda alguns segundos para a ordem ser processada
