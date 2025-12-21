@@ -47,6 +47,38 @@ export class WalletController {
     return this.walletService.getSolanaUsdtBalance(address, customerId);
   }
 
+  @Get('tron-usdt-balance')
+  @ApiOperation({ summary: 'Consultar saldo USDT em endereço Tron' })
+  async getTronUsdtBalance(@Query('address') address: string, @Req() req: AuthRequest) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.getTronUsdtBalance(address, customerId);
+  }
+
+  @Post('sync-all')
+  @ApiOperation({ summary: 'Sincronizar saldo de todas as carteiras com a blockchain' })
+  async syncAllBalances(@Req() req: AuthRequest) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.syncAllWalletBalances(customerId);
+  }
+
+  @Post(':id/sync')
+  @ApiOperation({ summary: 'Sincronizar saldo de uma carteira específica' })
+  async syncWalletBalance(@Req() req: AuthRequest, @Param('id') id: string) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.syncWalletBalance(id, customerId);
+  }
+
+  @Patch(':id/balance')
+  @ApiOperation({ summary: 'Atualizar saldo da carteira manualmente (admin)' })
+  async updateWalletBalance(
+    @Req() req: AuthRequest,
+    @Param('id') id: string,
+    @Body('balance') balance: string,
+  ) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.updateWalletBalance(id, customerId, balance);
+  }
+
   @Get('usdt')
   @ApiOperation({ summary: 'Listar todas as wallets USDT do customer' })
   async getAllUsdtWallets(@Req() req: AuthRequest) {

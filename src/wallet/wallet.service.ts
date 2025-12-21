@@ -202,6 +202,72 @@ export class WalletService {
     }
   }
 
+  async getTronUsdtBalance(address: string, customerId?: string): Promise<string> {
+    try {
+      const balance = await this.tronService.getUsdtBalance(address);
+      const saldoUsdt = balance.toString();
+
+      if (customerId) {
+        await this.prisma.wallet.updateMany({
+          where: { customerId, externalAddress: address, network: 'TRON' },
+          data: { balance: saldoUsdt },
+        });
+      }
+
+      return saldoUsdt;
+    } catch (err: any) {
+      this.logger.error(`Erro ao consultar saldo USDT Tron: ${err.message}`);
+      return '0';
+    }
+  }
+
+  async syncWalletBalance(walletId: string, customerId: string): Promise<{ balance: string; wallet: any }> {
+    const wallet = await this.getWalletById(walletId, customerId);
+    
+    let balance = '0';
+    if (wallet.externalAddress) {
+      if (wallet.network === 'SOLANA') {
+        balance = await this.getSolanaUsdtBalance(wallet.externalAddress, customerId);
+      } else if (wallet.network === 'TRON') {
+        balance = await this.getTronUsdtBalance(wallet.externalAddress, customerId);
+      }
+    }
+
+    const updatedWallet = await this.prisma.wallet.findUnique({ where: { id: walletId } });
+    return { balance, wallet: updatedWallet };
+  }
+
+  async updateWalletBalance(walletId: string, customerId: string, balance: string): Promise<any> {
+    const wallet = await this.getWalletById(walletId, customerId);
+    return this.prisma.wallet.update({
+      where: { id: wallet.id },
+      data: { balance },
+    });
+  }
+
+  async syncAllWalletBalances(customerId: string): Promise<any[]> {
+    const wallets = await this.prisma.wallet.findMany({ where: { customerId } });
+    const results: any[] = [];
+
+    for (const wallet of wallets) {
+      try {
+        let balance = '0';
+        if (wallet.externalAddress) {
+          if (wallet.network === 'SOLANA') {
+            balance = await this.getSolanaUsdtBalance(wallet.externalAddress, customerId);
+          } else if (wallet.network === 'TRON') {
+            balance = await this.getTronUsdtBalance(wallet.externalAddress, customerId);
+          }
+        }
+        results.push({ id: wallet.id, network: wallet.network, address: wallet.externalAddress, balance });
+      } catch (err: any) {
+        results.push({ id: wallet.id, network: wallet.network, address: wallet.externalAddress, balance: wallet.balance, error: err.message });
+      }
+    }
+
+    return results;
+  }
+
   async getAllUsdtWalletsForCustomer(customerId: string) {
     return this.prisma.wallet.findMany({
       where: { customerId, currency: 'USDT' },

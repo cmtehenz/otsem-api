@@ -1673,6 +1673,113 @@
         ]
       }
     },
+    "/wallet/tron-usdt-balance": {
+      "get": {
+        "operationId": "WalletController_getTronUsdtBalance",
+        "parameters": [
+          {
+            "name": "address",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar saldo USDT em endereço Tron",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/wallet/sync-all": {
+      "post": {
+        "operationId": "WalletController_syncAllBalances",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sincronizar saldo de todas as carteiras com a blockchain",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/wallet/{id}/sync": {
+      "post": {
+        "operationId": "WalletController_syncWalletBalance",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sincronizar saldo de uma carteira específica",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/wallet/{id}/balance": {
+      "patch": {
+        "operationId": "WalletController_updateWalletBalance",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualizar saldo da carteira manualmente (admin)",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/wallet/usdt": {
       "get": {
         "operationId": "WalletController_getAllUsdtWallets",

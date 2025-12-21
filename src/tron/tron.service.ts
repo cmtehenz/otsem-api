@@ -89,6 +89,37 @@ export class TronService implements OnModuleInit {
 
     async getUsdtBalance(address: string): Promise<number> {
         await this.ensureInitialized();
+        
+        // Method 1: Use TronGrid triggerconstantcontract API (most reliable)
+        try {
+            const addressHex = this.tronWeb.address.toHex(address).replace(/^41/, '');
+            const parameter = '0000000000000000000000' + addressHex;
+            
+            const response = await fetch('https://api.trongrid.io/wallet/triggerconstantcontract', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contract_address: USDT_TRC20_CONTRACT,
+                    function_selector: 'balanceOf(address)',
+                    parameter: parameter,
+                    owner_address: address,
+                    visible: true
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json() as { constant_result?: string[] };
+                if (data.constant_result && data.constant_result[0]) {
+                    const balanceHex = data.constant_result[0];
+                    const balance = parseInt(balanceHex, 16);
+                    return balance / 1_000_000;
+                }
+            }
+        } catch (error: any) {
+            this.logger.warn(`TronGrid API falhou: ${error.message}, tentando TronWeb...`);
+        }
+
+        // Method 2: Fallback to TronWeb contract call
         try {
             const contract = await this.tronWeb.contract().at(USDT_TRC20_CONTRACT);
             const balance = await contract.balanceOf(address).call();
