@@ -85,4 +85,16 @@ export class OkxController {
     async getTradeHistory() {
         return await this.okxService.getTradeHistory();
     }
+
+    @Post('transfer-to-funding')
+    @ApiOperation({ summary: 'Transferir USDT de trading para funding' })
+    async transferToFunding(@Body('amount') amount: string) {
+        return await this.okxService.transferFromTradingToFunding('USDT', amount);
+    }
+
+    @Get('funding-balance')
+    @ApiOperation({ summary: 'Saldo USDT na conta funding (para saque)' })
+    async getFundingBalance() {
+        return await this.okxService.getFundingBalance('USDT');
+    }
 }

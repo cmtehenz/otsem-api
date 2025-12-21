@@ -2996,6 +2996,36 @@
         ]
       }
     },
+    "/okx/transfer-to-funding": {
+      "post": {
+        "operationId": "OkxController_transferToFunding",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Transferir USDT de trading para funding",
+        "tags": [
+          "OKX"
+        ]
+      }
+    },
+    "/okx/funding-balance": {
+      "get": {
+        "operationId": "OkxController_getFundingBalance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Saldo USDT na conta funding (para saque)",
+        "tags": [
+          "OKX"
+        ]
+      }
+    },
     "/tron/hot-wallet": {
       "get": {
         "operationId": "TronController_getHotWalletInfo",

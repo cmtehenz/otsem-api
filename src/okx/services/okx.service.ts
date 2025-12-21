@@ -276,6 +276,18 @@ export class OkxService {
         return response.data;
     }
 
+    async getFundingBalance(currency: string) {
+        const method = 'GET';
+        const requestPath = '/api/v5/asset/balances';
+        const headers = this.authService.getAuthHeaders(method, requestPath, '');
+        const apiUrl = process.env.OKX_API_URL || 'https://www.okx.com';
+
+        const response = await axios.get(`${apiUrl}${requestPath}`, { headers });
+        const balances = response.data?.data || [];
+        const asset = balances.find((b: any) => b.ccy === currency);
+        return asset ? asset.availBal : '0';
+    }
+
     /**
      * Vende USDT por BRL (ordem de mercado)
      */
