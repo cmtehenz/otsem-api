@@ -32,12 +32,13 @@ export class OkxController {
         toAddress: string;
         fundPwd: string;
         fee: string | number;
+        network?: string;
     }) {
         return await this.okxService.withdrawUsdt({
             currency: 'USDT',
             amount: body.amount,
             toAddress: body.toAddress,
-            network: 'Solana',
+            network: body.network || 'Solana',
             fundPwd: body.fundPwd,
             fee: body.fee
         });
