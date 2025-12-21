@@ -18,6 +18,10 @@ export class WalletService {
     private readonly tronService: TronService,
   ) { }
 
+  getTronService() {
+    return this.tronService;
+  }
+
   async createWallet(
     customerId: string,
     network: WalletNetwork,
@@ -343,52 +347,24 @@ export class WalletService {
 
       // Determinar rede e taxa
       const isTron = wallet.network === 'TRON';
-      const networkFee = isTron ? 1 : 1; // 1 USDT para ambas
+      const networkFee = 1; // 1 USDT para ambas as redes
       const usdtToWithdraw = usdtAmount - networkFee;
       if (usdtToWithdraw <= 0) {
         throw new Error(`Quantidade de USDT insuficiente para saque. Comprado: ${usdtAmount}, taxa: ${networkFee}`);
       }
 
-      if (isTron) {
-        // Fluxo Tron: OKX → Hot Wallet → Cliente
-        const hotWalletAddress = this.tronService.getHotWalletAddress();
-        this.logger.log(`[TRON] Sacando ${usdtToWithdraw} USDT para hot wallet: ${hotWalletAddress}`);
+      // OKX → Cliente direto (Solana ou Tron)
+      const network = isTron ? 'TRC20' : 'Solana';
+      this.logger.log(`[${network}] Sacando ${usdtToWithdraw} USDT para: ${wallet.externalAddress}`);
 
-        // 3a) Sacar para hot wallet
-        const okxWithdraw = await this.okxService.withdrawUsdt({
-          currency: 'USDT',
-          amount: usdtToWithdraw.toFixed(2),
-          toAddress: hotWalletAddress,
-          network: 'TRC20',
-          fundPwd: process.env.OKX_API_PASSPHRASE || 'not_found',
-          fee: networkFee.toString(),
-        });
-
-        // 3b) Aguardar confirmação e enviar para cliente
-        this.logger.log(`[TRON] Aguardando confirmação do saque OKX...`);
-        await new Promise((resolve) => setTimeout(resolve, 30000)); // 30s para processamento OKX
-
-        // 3c) Enviar da hot wallet para cliente (taxa ~1-2 TRX)
-        const tronTransfer = await this.tronService.sendUsdt(wallet.externalAddress, usdtToWithdraw - 1);
-        this.logger.log(`[TRON] Enviado para cliente: ${wallet.externalAddress}, txId: ${tronTransfer.txId}`);
-
-        withdrawResult = {
-          okxWithdraw,
-          tronTransfer,
-          intermediateWallet: hotWalletAddress,
-          finalAmount: usdtToWithdraw - 1,
-        };
-      } else {
-        // Fluxo Solana: OKX → Cliente direto
-        withdrawResult = await this.okxService.safeWithdrawUsdt({
-          currency: 'USDT',
-          amount: usdtToWithdraw.toFixed(2),
-          toAddress: wallet.externalAddress,
-          network: 'Solana',
-          fundPwd: process.env.OKX_API_PASSPHRASE || 'not_found',
-          fee: networkFee.toString(),
-        });
-      }
+      withdrawResult = await this.okxService.withdrawUsdt({
+        currency: 'USDT',
+        amount: usdtToWithdraw.toFixed(2),
+        toAddress: wallet.externalAddress,
+        network,
+        fundPwd: process.env.OKX_API_PASSPHRASE || 'not_found',
+        fee: networkFee.toString(),
+      });
       stages.usdtTransfer = 'done';
 
       // Persist estágio final

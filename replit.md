@@ -86,34 +86,24 @@ Legacy models (Deposit, Payment) are kept for backward compatibility.
 
 ## Recent Changes (Dec 2025)
 
-### Tron Hot Wallet Integration (Dec 21)
-Added Tron (TRC20) support with hot wallet intermediary for privacy:
+### Tron Network Support (Dec 21)
+Added Tron (TRC20) support for USDT transfers:
 - **New TronModule**: `src/tron/` with TronService and TronController
-- **Hot Wallet Flow**: BRL → OKX → Hot Wallet → Customer Wallet (hides OKX origin)
-- **Environment Variables**:
-  - `OKX_TRON_DEPOSIT_ADDRESS` - Tron hot wallet address (TLtccxekdFJ6Qjy8yAEBuiv5BM7uk4iepr)
-  - `TRON_HOT_WALLET_PRIVATE_KEY` - Private key for sending USDT from hot wallet
+- **Direct Flow**: BRL → OKX → Customer Wallet (Solana or Tron)
 
 **New Endpoints**:
-- `GET /tron/hot-wallet` - Get hot wallet address and balances
 - `GET /tron/balance?address=...` - Get USDT/TRX balance of any Tron address
 - `POST /tron/create-wallet` - Create new Tron wallet (returns address + private key)
-- `POST /tron/send-usdt` - Send USDT from hot wallet to address
 - `GET /tron/validate-address?address=...` - Validate Tron address format
 - `POST /wallet/create-tron` - Create Tron wallet for customer
 
-**BRL→USDT Flow for Tron wallets**:
+**BRL→USDT Flow** (supports both Solana and Tron):
 1. Customer pays BRL
 2. BRL sent to OKX via PIX
 3. USDT bought on OKX
-4. OKX withdraws USDT to hot wallet (TLtccxekdFJ6Qjy8yAEBuiv5BM7uk4iepr)
-5. Hot wallet forwards USDT to customer's Tron wallet
-6. Customer sees USDT from hot wallet, not OKX
+4. OKX withdraws USDT directly to customer's wallet (Solana or TRC20)
 
-**Fees**: 
-- OKX withdrawal: ~1 USDT
-- Tron network transfer: ~1 USDT (paid in TRX)
-- Keep TRX in hot wallet for gas fees
+**Fees**: ~1 USDT per withdrawal (OKX network fee)
 
 ### CONVERSION Transaction Type (Dec 19)
 - Added `CONVERSION` to TransactionType enum for BRL→USDT conversions
