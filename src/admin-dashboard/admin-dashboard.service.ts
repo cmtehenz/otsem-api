@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InterBankingService } from '../inter/services/inter-banking.service';
+import { OkxService } from '../okx/services/okx.service';
+import { FdbankBankAccountService } from '../fdbank/services/fdbank-bank-account.service';
 
 @Injectable()
 export class AdminDashboardService {
@@ -9,6 +11,8 @@ export class AdminDashboardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly interBanking: InterBankingService,
+    private readonly okxService: OkxService,
+    private readonly fdbankService: FdbankBankAccountService,
   ) { }
 
   async getStats() {
@@ -94,8 +98,11 @@ export class AdminDashboardService {
         }),
       ]);
 
-      const transactionsLast7Days = await this.getTransactionsLast7Days(last7Days);
-      const usersLast30Days = await this.getUsersLast30Days(last30Days);
+      const [transactionsLast7Days, usersLast30Days, externalBalances] = await Promise.all([
+        this.getTransactionsLast7Days(last7Days),
+        this.getUsersLast30Days(last30Days),
+        this.getExternalBalances(),
+      ]);
 
       const transactionsByType = transactionsByTypeRaw.map((t: any) => ({
         type: t.type,
@@ -116,9 +123,6 @@ export class AdminDashboardService {
 
       const alerts = await this.generateAlerts(kycPending);
 
-      const totalBrlBalance = this.toNumber(accountsBalance._sum?.balance);
-      const blockedBrl = this.toNumber(accountsBalance._sum?.blockedAmount);
-
       return {
         kpis: {
           totalUsers,
@@ -136,20 +140,7 @@ export class AdminDashboardService {
           conversionsToday: conversionsTodayData,
           conversionsVolume: this.toNumber(conversionsVolumeAgg._sum?.amount),
         },
-        balances: {
-          brl: {
-            available: totalBrlBalance - blockedBrl,
-            blocked: blockedBrl,
-            total: totalBrlBalance,
-          },
-          usdt: {
-            solana: 0,
-            tron: 0,
-            total: 0,
-          },
-          usdtRate: 6.10,
-          inter: banking,
-        },
+        balances: externalBalances,
         charts: {
           transactionsLast7Days,
           usersLast30Days,
@@ -266,6 +257,48 @@ export class AdminDashboardService {
       PAYOUT: 'Pagamento USDT',
     };
     return descriptions[type] || type;
+  }
+
+  private async getExternalBalances() {
+    const [interData, okxBrl, okxUsdt, fdData, usdtRate] = await Promise.all([
+      this.interBanking.getSaldo().catch(() => ({ disponivel: 0 })),
+      this.okxService.getBrlBalance().catch(() => '0'),
+      this.okxService.getUsdtBalance().catch(() => '0'),
+      this.fdbankService.getActiveBankAccount().catch(() => ({ data: { balance: 0 } })),
+      this.getUsdtBrlRate(),
+    ]);
+
+    const interBrl = parseFloat(interData?.disponivel || '0');
+    const okxBrlValue = parseFloat(okxBrl || '0');
+    const okxUsdtValue = parseFloat(okxUsdt || '0');
+    const fdBrl = parseFloat(fdData?.data?.balance || '0');
+
+    return {
+      brl: {
+        inter: interBrl,
+        okx: okxBrlValue,
+        fd: fdBrl,
+        total: interBrl + okxBrlValue + fdBrl,
+      },
+      usdt: {
+        okx: okxUsdtValue,
+      },
+      usdtRate,
+    };
+  }
+
+  private async getUsdtBrlRate(): Promise<number> {
+    try {
+      const axios = require('axios');
+      const response = await axios.get('https://www.okx.com/api/v5/market/ticker?instId=USDT-BRL');
+      const last = response?.data?.data?.[0]?.last;
+      if (last) {
+        return parseFloat(last);
+      }
+      return 6.10;
+    } catch {
+      return 6.10;
+    }
   }
 
   async getSummary() {

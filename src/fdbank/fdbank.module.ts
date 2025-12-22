@@ -18,6 +18,6 @@ import { FdbankPixTransferController } from './controllers/fdbank-pix-transfer.c
     imports: [ConfigModule.forFeature(fdbankConfig)],
     providers: [FdbankService, FdbankBankAccountService, FdbankPixKeyService, FdbankCustomerService, FdbankPixContactService, FdbankPixTransferService],
     controllers: [FdbankController, FdbankPixKeyController, FdbankBankAccountController, FdbankCustomerController, FdbankPixContactController, FdbankPixTransferController],
-    exports: [FdbankService, FdbankCustomerService, FdbankPixContactService, FdbankPixTransferService],
+    exports: [FdbankService, FdbankBankAccountService, FdbankCustomerService, FdbankPixContactService, FdbankPixTransferService],
 })
 export class FdbankModule { }
