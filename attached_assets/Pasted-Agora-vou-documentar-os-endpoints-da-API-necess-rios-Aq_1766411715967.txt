@@ -1,0 +1,106 @@
+Agora vou documentar os endpoints da API necessários. Aqui está o que você precisa implementar no backend:
+
+Endpoint Necessário para o Dashboard Admin
+GET /admin/dashboard/stats
+Este é o único endpoint necessário. Ele deve retornar todos os dados do dashboard consolidados:
+
+{
+    "kpis": {
+        "totalUsers": 1523,
+        "usersToday": 12,
+        "usersThisWeek": 87,
+        "usersThisMonth": 342,
+        "kycPending": 15,
+        "kycApproved": 1203,
+        "kycRejected": 45,
+        "totalTransactions": 8456,
+        "transactionsToday": 156,
+        "volumeToday": 125000.50,
+        "volumeThisWeek": 875000.00,
+        "volumeThisMonth": 3250000.00,
+        "conversionsToday": 23,
+        "conversionsVolume": 45000.00
+    },
+    "balances": {
+        "brl": {
+            "available": 1250000.00,
+            "blocked": 50000.00,
+            "total": 1300000.00
+        },
+        "usdt": {
+            "solana": 15000.00,
+            "tron": 8500.00,
+            "total": 23500.00
+        },
+        "usdtRate": 5.85
+    },
+    "charts": {
+        "transactionsLast7Days": [
+            { "date": "2025-12-16", "count": 145, "volume": 120000.00 },
+            { "date": "2025-12-17", "count": 132, "volume": 98000.00 },
+            { "date": "2025-12-18", "count": 156, "volume": 145000.00 },
+            { "date": "2025-12-19", "count": 178, "volume": 167000.00 },
+            { "date": "2025-12-20", "count": 165, "volume": 134000.00 },
+            { "date": "2025-12-21", "count": 142, "volume": 112000.00 },
+            { "date": "2025-12-22", "count": 156, "volume": 125000.00 }
+        ],
+        "usersLast30Days": [
+            { "date": "2025-11-23", "count": 8 },
+            { "date": "2025-11-24", "count": 12 },
+            ...
+        ],
+        "transactionsByType": [
+            { "type": "PIX_IN", "count": 3245, "volume": 1850000.00 },
+            { "type": "PIX_OUT", "count": 2134, "volume": 980000.00 },
+            { "type": "CONVERSION", "count": 856, "volume": 520000.00 },
+            { "type": "PAYOUT", "count": 221, "volume": 150000.00 }
+        ]
+    },
+    "recentTransactions": [
+        {
+            "id": "tx_123abc",
+            "type": "PIX_IN",
+            "amount": 1500.00,
+            "currency": "BRL",
+            "status": "COMPLETED",
+            "description": "Depósito via PIX",
+            "customerName": "João Silva",
+            "createdAt": "2025-12-22T14:30:00Z"
+        },
+        ...
+    ],
+    "alerts": [
+        {
+            "id": "alert_001",
+            "type": "kyc_pending",
+            "title": "5 verificações KYC pendentes",
+            "description": "Existem 5 usuários aguardando aprovação de documentos",
+            "actionUrl": "/admin/kyc",
+            "createdAt": "2025-12-22T10:00:00Z"
+        },
+        {
+            "id": "alert_002",
+            "type": "high_value",
+            "title": "Transação de alto valor",
+            "description": "Transferência de R$ 50.000 aguardando revisão",
+            "actionUrl": "/admin/transactions/tx_456",
+            "createdAt": "2025-12-22T09:15:00Z"
+        }
+    ],
+    "timestamp": "2025-12-22T15:00:00Z"
+}
+Tipos de Alertas:
+kyc_pending - KYCs aguardando revisão
+high_value - Transações de alto valor
+error - Erros de sistema/integração
+warning - Avisos gerais
+Tipos de Transação:
+PIX_IN - Depósito PIX
+PIX_OUT - Saque PIX
+CONVERSION - Conversão BRL → USDT
+PAYOUT - Pagamento USDT
+Status de Transação:
+COMPLETED - Concluída
+PENDING - Pendente
+PROCESSING - Processando
+FAILED - Falhou
