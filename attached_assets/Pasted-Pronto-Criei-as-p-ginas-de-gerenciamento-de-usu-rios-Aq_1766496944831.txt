@@ -1,0 +1,99 @@
+Pronto! Criei as páginas de gerenciamento de usuários. Aqui estão os endpoints da API que você precisa implementar:
+
+1. Listar Usuários
+GET /admin/users
+Query Parameters:
+
+page (number) - Página atual (default: 1)
+limit (number) - Itens por página (default: 20)
+search (string) - Busca por nome, email ou CPF/CNPJ
+kycStatus (string) - Filtro: APPROVED, PENDING, REJECTED, NOT_STARTED
+accountStatus (string) - Filtro: ACTIVE, BLOCKED, SUSPENDED
+Response:
+
+{
+    "data": [
+        {
+            "id": "uuid",
+            "name": "João Silva",
+            "email": "joao@email.com",
+            "cpfCnpj": "12345678901",
+            "phone": "11999999999",
+            "role": "CUSTOMER",
+            "kycStatus": "APPROVED",
+            "accountStatus": "ACTIVE",
+            "balanceBRL": 1500.00,
+            "createdAt": "2025-01-15T10:00:00Z",
+            "lastLoginAt": "2025-12-22T14:30:00Z"
+        }
+    ],
+    "total": 1523,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 77,
+    "hasNext": true,
+    "hasPrev": false
+}
+2. Detalhes do Usuário
+GET /admin/users/:id
+Response:
+
+{
+    "id": "uuid",
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "cpfCnpj": "12345678901",
+    "phone": "11999999999",
+    "role": "CUSTOMER",
+    "kycStatus": "APPROVED",
+    "accountStatus": "ACTIVE",
+    "balanceBRL": 1500.00,
+    "address": {
+        "street": "Rua das Flores",
+        "number": "123",
+        "complement": "Apto 45",
+        "neighborhood": "Centro",
+        "city": "São Paulo",
+        "state": "SP",
+        "zipCode": "01234567"
+    },
+    "createdAt": "2025-01-15T10:00:00Z",
+    "updatedAt": "2025-12-20T08:00:00Z",
+    "lastLoginAt": "2025-12-22T14:30:00Z",
+    "kycDetails": {
+        "submittedAt": "2025-01-16T14:00:00Z",
+        "reviewedAt": "2025-01-17T09:00:00Z",
+        "reviewedBy": "admin@otsempay.com",
+        "rejectReason": null,
+        "documentType": "CNH"
+    }
+}
+3. Transações do Usuário
+GET /admin/users/:id/transactions
+Query Parameters:
+
+limit (number) - default: 10
+Response:
+
+{
+    "data": [
+        {
+            "id": "tx_123",
+            "type": "PIX_IN",
+            "amount": 500.00,
+            "status": "COMPLETED",
+            "description": "Depósito via PIX",
+            "createdAt": "2025-12-22T10:00:00Z"
+        }
+    ],
+    "total": 45,
+    "page": 1,
+    "limit": 10
+}
+4. Bloquear Usuário
+POST /admin/users/:id/block
+Response: 200 OK
+
+5. Desbloquear Usuário
+POST /admin/users/:id/unblock
+Response: 200 OK
