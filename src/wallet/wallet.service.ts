@@ -343,6 +343,10 @@ export class WalletService {
         throw new Error('Carteira (Solana ou Tron) não encontrada para o cliente');
       }
 
+      if (!wallet.okxWhitelisted) {
+        throw new Error('Carteira não está na whitelist da OKX. Adicione o endereço na OKX e marque como whitelistada antes de converter.');
+      }
+
       // 4) Registrar transação CONVERSION com dados da carteira
       const balanceBefore = account.balance;
       await this.prisma.transaction.create({
