@@ -415,24 +415,27 @@ export class WalletService {
       // 5) Transferência USDT para carteira do cliente (wallet já foi determinado acima)
       // Determinar rede e taxa
       const isTron = wallet.network === 'TRON';
-      const networkFee = 1; // 1 USDT para ambas as redes
+      const networkFee = isTron ? 2.1 : 1; // TRC20: 2.1 USDT, Solana: 1 USDT
       const usdtToWithdraw = usdtAmount - networkFee;
       if (usdtToWithdraw <= 0) {
         throw new Error(`Quantidade de USDT insuficiente para saque. Comprado: ${usdtAmount}, taxa: ${networkFee}`);
       }
 
-      // OKX → Cliente direto (Solana ou Tron)
+      // 5a) Transferir da conta trading para funding (necessário para saque)
+      const totalToTransfer = usdtAmount.toFixed(2);
+      this.logger.log(`[OKX] Transferindo ${totalToTransfer} USDT de trading para funding`);
+      await this.okxService.transferFromTradingToFunding('USDT', totalToTransfer);
+
+      // 5b) OKX → Cliente direto (Solana ou Tron)
       const network = isTron ? 'TRC20' : 'Solana';
       this.logger.log(`[${network}] Sacando ${usdtToWithdraw} USDT para: ${wallet.externalAddress}`);
 
-      withdrawResult = await this.okxService.withdrawUsdt({
-        currency: 'USDT',
-        amount: usdtToWithdraw.toFixed(2),
-        toAddress: wallet.externalAddress,
+      withdrawResult = await this.okxService.withdrawUsdtSimple(
+        usdtToWithdraw.toFixed(2),
+        wallet.externalAddress,
         network,
-        fundPwd: process.env.OKX_API_PASSPHRASE || 'not_found',
-        fee: networkFee.toString(),
-      });
+        networkFee.toString(),
+      );
       stages.usdtTransfer = 'done';
 
       // Persist estágio final
