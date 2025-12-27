@@ -33,7 +33,8 @@ The system is built on **NestJS 11**, leveraging a modular architecture to separ
     -   **Automatic Reconciliation**: Polling of bank APIs for paid PIX charges and intelligent customer identification for automatic account crediting.
     -   **PIX Key Management**: Endpoints for listing, creating, and deleting PIX keys with an automated micro-transfer validation mechanism.
     -   **PIX Send Validation**: Strict checks for KYC status, valid PIX keys, sufficient balance, and adherence to transaction limits before processing outbound PIX payments.
--   **BRL to USDT Conversion Flow**: Facilitates conversion from BRL to USDT using OKX exchange, with direct withdrawal to customer's specified wallet (Solana or Tron).
+-   **BRL to USDT Conversion Flow (BUY)**: Facilitates conversion from BRL to USDT using OKX exchange, with direct withdrawal to customer's specified wallet (Solana or Tron).
+-   **USDT to BRL Conversion Flow (SELL)**: Customer sends USDT to OKX deposit address → System monitors deposits → Sells USDT for BRL → Sends PIX to customer's registered key.
 -   **Affiliate System**:
     -   Manages affiliate profiles, commission rates, and payouts.
     -   Automated commission calculation on BRL to USDT conversions.
@@ -85,3 +86,25 @@ A tabela `conversions` armazena dados estruturados de todas as conversões BRL�
 - `PATCH /admin/users/:id/spread` - Ajustar spread do cliente
 - Body: `{ "spreadPercent": 0.95 }` (spread em %)
 - O sistema converte automaticamente para spreadValue (0.95% → 0.9905)
+
+## SELL Flow (USDT → BRL) Endpoints
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/wallet/deposit-address?network=SOLANA\|TRON` | GET | Obtém endereço OKX para depósito USDT |
+| `/wallet/quote-sell-usdt?usdtAmount=X&network=SOLANA\|TRON` | GET | Cotação: quanto BRL o cliente recebe por X USDT |
+| `/wallet/sell-usdt-to-pix` | POST | Inicia venda USDT → PIX (cria registro PENDING) |
+| `/wallet/process-sell/:conversionId` | POST | Processa venda após depósito confirmado (admin) |
+| `/wallet/pending-sell-deposits` | GET | Verifica depósitos pendentes na OKX (admin) |
+
+### SELL Flow Status Progression
+1. `PENDING` - Aguardando depósito USDT na OKX
+2. `USDT_RECEIVED` - USDT depositado confirmado
+3. `USDT_SOLD` - USDT vendido por BRL na OKX
+4. `PIX_OUT_SENT` - PIX enviado ao cliente
+5. `COMPLETED` - Operação finalizada
+
+### Fee Model
+- **OTSEM absorve taxas de rede**: 1 USDT (Solana) / 2.1 USDT (Tron)
+- **Cliente paga apenas spread**: 0.95% (padrão, configurável por usuário)
+- **netProfit = spreadBrl - totalOkxFees - affiliateCommission**
