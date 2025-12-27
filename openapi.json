@@ -1962,6 +1962,47 @@
         ]
       }
     },
+    "/wallet/my-wallets": {
+      "get": {
+        "operationId": "WalletController_myWallets",
+        "parameters": [
+          {
+            "name": "network",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "SOLANA",
+                "ETHEREUM",
+                "POLYGON",
+                "BSC",
+                "TRON",
+                "BITCOIN",
+                "AVALANCHE",
+                "ARBITRUM",
+                "OPTIMISM",
+                "BASE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todas as wallets do customer (alias)",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/wallet/solana-usdt-balance": {
       "get": {
         "operationId": "WalletController_getSolanaUsdtBalance",

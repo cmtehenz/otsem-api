@@ -40,6 +40,14 @@ export class WalletController {
     return this.walletService.getWalletsByCustomer(customerId, network);
   }
 
+  @Get('my-wallets')
+  @ApiOperation({ summary: 'Listar todas as wallets do customer (alias)' })
+  @ApiQuery({ name: 'network', enum: WalletNetwork, required: false })
+  async myWallets(@Req() req: AuthRequest, @Query('network') network?: WalletNetwork) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.getWalletsByCustomer(customerId, network);
+  }
+
   @Get('solana-usdt-balance')
   @ApiOperation({ summary: 'Consultar saldo USDT em endereço Solana' })
   async getSolanaUsdtBalance(@Query('address') address: string, @Req() req: AuthRequest) {
