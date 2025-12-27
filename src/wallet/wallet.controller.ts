@@ -120,6 +120,34 @@ export class WalletController {
     return this.walletService.checkPendingSellDeposits();
   }
 
+  @Get('sell-tx-data')
+  @ApiOperation({ summary: 'Obter dados para construir transação USDT no frontend (client-side signing)' })
+  @ApiQuery({ name: 'walletId', type: String, required: true })
+  @ApiQuery({ name: 'usdtAmount', type: Number, required: true })
+  @ApiQuery({ name: 'network', enum: ['SOLANA', 'TRON'], required: true })
+  async getSellTxData(
+    @Req() req: AuthRequest,
+    @Query('walletId') walletId: string,
+    @Query('usdtAmount') usdtAmount: string,
+    @Query('network') network: 'SOLANA' | 'TRON',
+  ) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.getSellTransactionData(customerId, walletId, Number(usdtAmount), network);
+  }
+
+  @Get('quote-usdt')
+  @ApiOperation({ summary: 'Cotação: quanto USDT o cliente recebe por X BRL' })
+  @ApiQuery({ name: 'brlAmount', type: Number, required: true })
+  @ApiQuery({ name: 'walletId', type: String, required: false })
+  async getUsdtQuote(
+    @Req() req: AuthRequest,
+    @Query('brlAmount') brlAmount: string,
+    @Query('walletId') walletId?: string,
+  ) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.getUsdtQuote(customerId, Number(brlAmount), walletId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obter wallet por ID' })
   async getWallet(@Req() req: AuthRequest, @Param('id') id: string) {
@@ -178,19 +206,6 @@ export class WalletController {
     return this.walletService.deleteWallet(id, customerId);
   }
 
-  @Get('quote-usdt')
-  @ApiOperation({ summary: 'Cotação: quanto USDT o cliente recebe por X BRL' })
-  @ApiQuery({ name: 'brlAmount', type: Number, required: true })
-  @ApiQuery({ name: 'walletId', type: String, required: false })
-  async getUsdtQuote(
-    @Req() req: AuthRequest,
-    @Query('brlAmount') brlAmount: string,
-    @Query('walletId') walletId?: string,
-  ) {
-    const customerId = this.getCustomerId(req);
-    return this.walletService.getUsdtQuote(customerId, Number(brlAmount), walletId);
-  }
-
   @Post('buy-usdt-with-brl')
   @ApiOperation({ summary: 'Comprar USDT com BRL e transferir para wallet' })
   async buyUsdtWithBrl(
@@ -228,21 +243,6 @@ export class WalletController {
   @ApiOperation({ summary: 'Processar venda pendente após depósito confirmado (admin)' })
   async processSellConversion(@Param('conversionId') conversionId: string) {
     return this.walletService.processSellConversion(conversionId);
-  }
-
-  @Get('sell-tx-data')
-  @ApiOperation({ summary: 'Obter dados para construir transação USDT no frontend (client-side signing)' })
-  @ApiQuery({ name: 'walletId', type: String, required: true })
-  @ApiQuery({ name: 'usdtAmount', type: Number, required: true })
-  @ApiQuery({ name: 'network', enum: ['SOLANA', 'TRON'], required: true })
-  async getSellTxData(
-    @Req() req: AuthRequest,
-    @Query('walletId') walletId: string,
-    @Query('usdtAmount') usdtAmount: string,
-    @Query('network') network: 'SOLANA' | 'TRON',
-  ) {
-    const customerId = this.getCustomerId(req);
-    return this.walletService.getSellTransactionData(customerId, walletId, Number(usdtAmount), network);
   }
 
   @Post('submit-signed-sell')

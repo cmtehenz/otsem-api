@@ -2253,6 +2253,92 @@
         ]
       }
     },
+    "/wallet/sell-tx-data": {
+      "get": {
+        "operationId": "WalletController_getSellTxData",
+        "parameters": [
+          {
+            "name": "walletId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "usdtAmount",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "network",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "SOLANA",
+                "TRON"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obter dados para construir transação USDT no frontend (client-side signing)",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/wallet/quote-usdt": {
+      "get": {
+        "operationId": "WalletController_getUsdtQuote",
+        "parameters": [
+          {
+            "name": "brlAmount",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "walletId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cotação: quanto USDT o cliente recebe por X BRL",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/wallet/{id}": {
       "get": {
         "operationId": "WalletController_getWallet",
@@ -2427,43 +2513,6 @@
         ]
       }
     },
-    "/wallet/quote-usdt": {
-      "get": {
-        "operationId": "WalletController_getUsdtQuote",
-        "parameters": [
-          {
-            "name": "brlAmount",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "walletId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Cotação: quanto USDT o cliente recebe por X BRL",
-        "tags": [
-          "Wallet"
-        ]
-      }
-    },
     "/wallet/buy-usdt-with-brl": {
       "post": {
         "operationId": "WalletController_buyUsdtWithBrl",
@@ -2557,55 +2606,6 @@
           }
         ],
         "summary": "Processar venda pendente após depósito confirmado (admin)",
-        "tags": [
-          "Wallet"
-        ]
-      }
-    },
-    "/wallet/sell-tx-data": {
-      "get": {
-        "operationId": "WalletController_getSellTxData",
-        "parameters": [
-          {
-            "name": "walletId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "usdtAmount",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "network",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "SOLANA",
-                "TRON"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Obter dados para construir transação USDT no frontend (client-side signing)",
         "tags": [
           "Wallet"
         ]
