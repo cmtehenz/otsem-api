@@ -55,6 +55,14 @@ export class AdminConversionsService {
         ? affiliateMap.get(conv.affiliateId)
         : null;
 
+      const brlCharged = Number(conv.brlCharged);
+      const brlExchanged = Number(conv.brlExchanged);
+      const usdtPurchased = Number(conv.usdtPurchased);
+      const usdtWithdrawn = Number(conv.usdtWithdrawn);
+      const exchangeRate = Number(conv.exchangeRate);
+      const spreadPercent = Number(conv.spreadPercent);
+      const okxWithdrawFee = Number(conv.okxWithdrawFee);
+
       return {
         id: conv.id,
         createdAt: conv.createdAt,
@@ -62,20 +70,20 @@ export class AdminConversionsService {
         customer: conv.customer
           ? { id: conv.customer.id, name: conv.customer.name, email: conv.customer.email }
           : null,
-        brlPaid: Math.round(Number(conv.brlCharged) * 100),
-        brlCharged: Math.round(Number(conv.brlCharged) * 100),
-        brlExchanged: Math.round(Number(conv.brlExchanged) * 100),
-        usdtCredited: Math.round(Number(conv.usdtWithdrawn) * 100),
-        usdtPurchased: Math.round(Number(conv.usdtPurchased) * 100),
-        spreadApplied: Math.round(Number(conv.spreadPercent) * 10000) / 100,
-        spreadRate: 1 - Number(conv.spreadPercent),
-        exchangeRateBrlUsdt: Math.round(Number(conv.exchangeRate) * 100),
-        okxWithdrawFeeBrl: Math.round(Number(conv.okxWithdrawFee) * Number(conv.exchangeRate) * 100),
-        okxTradingFeeBrl: Math.round(Number(conv.okxTradingFee) * 100),
-        totalOkxFeesBrl: Math.round(Number(conv.totalOkxFees) * 100),
-        grossProfitBrl: Math.round(Number(conv.grossProfit) * 100),
-        affiliateCommissionBrl: Math.round(Number(conv.affiliateCommission || 0) * 100),
-        netProfitBrl: Math.round(Number(conv.netProfit) * 100),
+        brlCharged,
+        brlExchanged,
+        spreadBrl: Number(conv.spreadBrl),
+        spreadPercent: Math.round(spreadPercent * 10000) / 100,
+        usdtPurchased,
+        usdtWithdrawn,
+        exchangeRate,
+        okxWithdrawFeeUsdt: okxWithdrawFee,
+        okxWithdrawFeeBrl: Math.round(okxWithdrawFee * exchangeRate * 100) / 100,
+        okxTradingFee: Number(conv.okxTradingFee),
+        totalOkxFees: Number(conv.totalOkxFees),
+        grossProfit: Number(conv.grossProfit),
+        affiliateCommission: Number(conv.affiliateCommission || 0),
+        netProfit: Number(conv.netProfit),
         affiliate: affiliate
           ? { id: affiliate.id, code: affiliate.code, name: affiliate.name }
           : null,
@@ -84,7 +92,6 @@ export class AdminConversionsService {
         network: conv.network,
         walletAddress: conv.walletAddress,
         pixEndToEnd: conv.pixEndToEnd,
-        sourceOfBRL: 'INTER',
       };
     });
 
