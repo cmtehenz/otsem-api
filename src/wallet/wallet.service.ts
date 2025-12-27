@@ -321,9 +321,9 @@ export class WalletService {
 
     const network = wallet?.network || 'SOLANA';
     const networkFee = network === 'TRON' ? 2.1 : 1.0;
-    const usdtNet = Math.max(0, usdtEstimate - networkFee);
+    const usdtNet = usdtEstimate; // Cliente recebe 100%, OTSEM paga a taxa
 
-    const minBrl = networkFee * exchangeRate * (1 / spreadRate) + 1;
+    const minBrl = 10; // Mínimo absoluto
 
     return {
       brlAmount,
@@ -335,6 +335,7 @@ export class WalletService {
       network,
       networkFeeUsdt: networkFee,
       networkFeeBrl: Number((networkFee * exchangeRate).toFixed(2)),
+      networkFeePaidBy: 'OTSEM',
       usdtNet,
       wallet: wallet ? {
         id: wallet.id,
@@ -343,11 +344,11 @@ export class WalletService {
         whitelisted: wallet.okxWhitelisted,
       } : null,
       balanceBrl: balance,
-      canProceed: balance >= brlAmount && brlAmount >= 10 && usdtNet > 0 && wallet?.okxWhitelisted,
-      minBrlRecommended: Math.ceil(minBrl),
-      message: usdtNet <= 0 
-        ? `Valor mínimo para esta rede: R$ ${Math.ceil(minBrl)}` 
-        : `Você receberá ${usdtNet.toFixed(2)} USDT`,
+      canProceed: balance >= brlAmount && brlAmount >= 10 && usdtEstimate > 0 && wallet?.okxWhitelisted,
+      minBrlRecommended: minBrl,
+      message: usdtEstimate <= 0 
+        ? `Valor mínimo: R$ ${minBrl}` 
+        : `Você receberá ${usdtNet.toFixed(2)} USDT (taxa de rede paga pela OTSEM)`,
     };
   }
 
@@ -508,22 +509,22 @@ export class WalletService {
       }
 
       // 5) Transferência USDT para carteira do cliente (wallet já foi determinado acima)
-      // Determinar rede e taxa
+      // Determinar rede e taxa (OTSEM paga a taxa, cliente recebe 100% do USDT comprado)
       const isTron = wallet.network === 'TRON';
       const networkFee = isTron ? 2.1 : 1; // TRC20: 2.1 USDT, Solana: 1 USDT
-      const usdtToWithdraw = usdtAmount - networkFee;
-      if (usdtToWithdraw <= 0) {
-        throw new Error(`Quantidade de USDT insuficiente para saque. Comprado: ${usdtAmount}, taxa: ${networkFee}`);
+      const usdtToWithdraw = usdtAmount; // Cliente recebe exatamente o que foi comprado
+      if (usdtAmount <= 0) {
+        throw new Error(`Quantidade de USDT insuficiente para saque. Comprado: ${usdtAmount}`);
       }
 
-      // 5a) Transferir da conta trading para funding (necessário para saque)
-      const totalToTransfer = usdtAmount.toFixed(2);
-      this.logger.log(`[OKX] Transferindo ${totalToTransfer} USDT de trading para funding`);
+      // 5a) Transferir da conta trading para funding (valor + taxa para cobrir saque)
+      const totalToTransfer = (usdtAmount + networkFee).toFixed(2);
+      this.logger.log(`[OKX] Transferindo ${totalToTransfer} USDT de trading para funding (${usdtAmount} + ${networkFee} taxa)`);
       await this.okxService.transferFromTradingToFunding('USDT', totalToTransfer);
 
-      // 5b) OKX → Cliente direto (Solana ou Tron)
+      // 5b) OKX → Cliente direto (Solana ou Tron) - cliente recebe 100%
       const network = isTron ? 'TRC20' : 'Solana';
-      this.logger.log(`[${network}] Sacando ${usdtToWithdraw} USDT para: ${wallet.externalAddress}`);
+      this.logger.log(`[${network}] Sacando ${usdtToWithdraw} USDT para: ${wallet.externalAddress} (taxa ${networkFee} paga pela OTSEM)`);
 
       withdrawResult = await this.okxService.withdrawUsdtSimple(
         usdtToWithdraw.toFixed(2),
@@ -593,7 +594,7 @@ export class WalletService {
           spreadPercent: totalSpreadPercent,
           spreadBrl: spreadAmount,
           usdtPurchased: usdtAmount,
-          usdtWithdrawn: usdtToWithdraw,
+          usdtWithdrawn: usdtAmount,
           exchangeRate,
           network: wallet.network,
           walletAddress: wallet.externalAddress,
@@ -621,8 +622,9 @@ export class WalletService {
         okxBuyResult,
         withdrawResult,
         usdtBought: usdtAmount,
-        usdtWithdrawn: usdtToWithdraw,
+        usdtWithdrawn: usdtAmount,
         networkFee,
+        networkFeePaidBy: 'OTSEM',
         spread: {
           chargedBrl: brlAmount,
           exchangedBrl: brlToExchange,
