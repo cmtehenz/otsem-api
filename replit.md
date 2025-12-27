@@ -34,7 +34,7 @@ The system is built on **NestJS 11**, leveraging a modular architecture to separ
     -   **PIX Key Management**: Endpoints for listing, creating, and deleting PIX keys with an automated micro-transfer validation mechanism.
     -   **PIX Send Validation**: Strict checks for KYC status, valid PIX keys, sufficient balance, and adherence to transaction limits before processing outbound PIX payments.
 -   **BRL to USDT Conversion Flow (BUY)**: Facilitates conversion from BRL to USDT using OKX exchange, with direct withdrawal to customer's specified wallet (Solana or Tron).
--   **USDT to BRL Conversion Flow (SELL)**: Customer sends USDT to OKX deposit address → System monitors deposits → Sells USDT for BRL → Sends PIX to customer's registered key.
+-   **USDT to BRL Conversion Flow (SELL)**: Customer initiates sell from custodial wallet → System transfers USDT to OKX automatically → Sells USDT for BRL → Credits BRL to customer's OTSEM account balance.
 -   **Affiliate System**:
     -   Manages affiliate profiles, commission rates, and payouts.
     -   Automated commission calculation on BRL to USDT conversions.
@@ -87,22 +87,27 @@ A tabela `conversions` armazena dados estruturados de todas as conversões BRL�
 - Body: `{ "spreadPercent": 0.95 }` (spread em %)
 - O sistema converte automaticamente para spreadValue (0.95% → 0.9905)
 
-## SELL Flow (USDT → BRL) Endpoints
+## SELL Flow (USDT → BRL) - Custodial Wallet
+
+O cliente vende USDT da carteira custodial e recebe BRL creditado no saldo OTSEM.
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `/wallet/deposit-address?network=SOLANA\|TRON` | GET | Obtém endereço OKX para depósito USDT |
 | `/wallet/quote-sell-usdt?usdtAmount=X&network=SOLANA\|TRON` | GET | Cotação: quanto BRL o cliente recebe por X USDT |
-| `/wallet/sell-usdt-to-pix` | POST | Inicia venda USDT → PIX (cria registro PENDING) |
-| `/wallet/process-sell/:conversionId` | POST | Processa venda após depósito confirmado (admin) |
-| `/wallet/pending-sell-deposits` | GET | Verifica depósitos pendentes na OKX (admin) |
+| `/wallet/sell-usdt-for-brl` | POST | Inicia venda USDT → BRL (body: { walletId, usdtAmount }) |
+| `/wallet/process-sell/:conversionId` | POST | Processa venda após USDT recebido na OKX (admin) |
 
 ### SELL Flow Status Progression
-1. `PENDING` - Aguardando depósito USDT na OKX
-2. `USDT_RECEIVED` - USDT depositado confirmado
-3. `USDT_SOLD` - USDT vendido por BRL na OKX
-4. `PIX_OUT_SENT` - PIX enviado ao cliente
-5. `COMPLETED` - Operação finalizada
+1. `PENDING` - Registro criado, aguardando transferência
+2. `USDT_SENT` - USDT enviado da carteira custodial para OKX
+3. `USDT_RECEIVED` - USDT confirmado na OKX
+4. `USDT_SOLD` - USDT vendido por BRL na OKX
+5. `COMPLETED` - BRL creditado no saldo OTSEM do cliente
+
+### Custodial Wallet System
+- Carteiras criadas via `/wallet/create-solana` ou `/wallet/create-tron` são **custodiais**
+- Campo `encryptedPrivateKey` armazena chave privada para envio automático de USDT
+- Métodos `sendSolanaUsdt()` e `sendTronUsdt()` transferem USDT programaticamente
 
 ### Fee Model
 - **OTSEM absorve taxas de rede**: 1 USDT (Solana) / 2.1 USDT (Tron)
