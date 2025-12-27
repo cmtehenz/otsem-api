@@ -168,16 +168,6 @@ export class WalletController {
     return this.walletService.buyUsdtWithBrl(customerId, brlAmount, walletId);
   }
 
-  @Post('sell-usdt-for-brl')
-  @ApiOperation({ summary: 'Vender USDT e creditar BRL na conta' })
-  async sellUsdtForBrl(
-    @Req() req: AuthRequest,
-    @Body('usdtAmount') usdtAmount: number,
-  ) {
-    const customerId = this.getCustomerId(req);
-    return this.walletService.sellUsdtForBrl(customerId, usdtAmount);
-  }
-
   @Patch(':id/okx-whitelist')
   @ApiOperation({ summary: 'Marcar wallet como whitelistada na OKX' })
   async setOkxWhitelisted(
@@ -209,15 +199,15 @@ export class WalletController {
     return this.walletService.quoteSellUsdt(customerId, Number(usdtAmount), network);
   }
 
-  @Post('sell-usdt-to-pix')
-  @ApiOperation({ summary: 'Vender USDT da carteira e creditar BRL na conta OTSEM' })
-  async initiateSellUsdtToPix(
+  @Post('sell-usdt-to-brl')
+  @ApiOperation({ summary: 'Iniciar venda USDT → BRL (cliente envia USDT para OKX)' })
+  async initiateSellUsdtToBrl(
     @Req() req: AuthRequest,
     @Body('usdtAmount') usdtAmount: number,
-    @Body('walletId') walletId: string,
+    @Body('network') network: 'SOLANA' | 'TRON',
   ) {
     const customerId = this.getCustomerId(req);
-    return this.walletService.initiateSellUsdtToPix(customerId, usdtAmount, walletId);
+    return this.walletService.initiateSellUsdtToBrl(customerId, usdtAmount, network);
   }
 
   @Post('process-sell/:conversionId')

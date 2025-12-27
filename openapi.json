@@ -2349,26 +2349,6 @@
         ]
       }
     },
-    "/wallet/sell-usdt-for-brl": {
-      "post": {
-        "operationId": "WalletController_sellUsdtForBrl",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Vender USDT e creditar BRL na conta",
-        "tags": [
-          "Wallet"
-        ]
-      }
-    },
     "/wallet/{id}/okx-whitelist": {
       "patch": {
         "operationId": "WalletController_setOkxWhitelisted",
@@ -2472,9 +2452,9 @@
         ]
       }
     },
-    "/wallet/sell-usdt-to-pix": {
+    "/wallet/sell-usdt-to-brl": {
       "post": {
-        "operationId": "WalletController_initiateSellUsdtToPix",
+        "operationId": "WalletController_initiateSellUsdtToBrl",
         "parameters": [],
         "responses": {
           "201": {
@@ -2486,7 +2466,7 @@
             "bearer": []
           }
         ],
-        "summary": "Vender USDT da carteira e creditar BRL na conta OTSEM",
+        "summary": "Iniciar venda USDT → BRL (cliente envia USDT para OKX)",
         "tags": [
           "Wallet"
         ]

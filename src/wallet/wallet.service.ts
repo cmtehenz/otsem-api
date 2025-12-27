@@ -983,34 +983,20 @@ export class WalletService {
   }
 
   /**
-   * Inicia venda USDT → PIX
-   * Cliente envia USDT para endereço OKX, sistema monitora e processa
+   * Inicia venda USDT → BRL
+   * Cliente envia USDT diretamente para endereço OKX, sistema monitora e processa
    */
-  async initiateSellUsdtToPix(
+  async initiateSellUsdtToBrl(
     customerId: string,
     usdtAmount: number,
-    walletId: string,
+    network: 'SOLANA' | 'TRON',
   ) {
-    if (usdtAmount < 1) {
-      throw new BadRequestException('Quantidade mínima é 1 USDT');
-    }
-
-    const wallet = await this.getWalletById(walletId, customerId);
-    
-    if (!wallet.encryptedPrivateKey) {
-      throw new BadRequestException('Esta carteira não possui chave privada (não é custodial). Use uma carteira criada pelo sistema.');
-    }
-
-    const network = wallet.network as 'SOLANA' | 'TRON';
-    if (network !== 'SOLANA' && network !== 'TRON') {
-      throw new BadRequestException('Apenas carteiras Solana e Tron são suportadas');
+    if (usdtAmount < 10) {
+      throw new BadRequestException('Quantidade mínima é 10 USDT');
     }
 
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
-      include: { 
-        pixKeys: { where: { status: 'ACTIVE' }, take: 1 },
-      },
     });
 
     if (!customer) {
@@ -1020,17 +1006,6 @@ export class WalletService {
     const account = await this.prisma.account.findFirst({ where: { customerId } });
     if (!account) {
       throw new BadRequestException('Conta não encontrada');
-    }
-
-    let currentBalance = '0';
-    if (network === 'SOLANA') {
-      currentBalance = await this.getSolanaUsdtBalance(wallet.externalAddress!, customerId);
-    } else {
-      currentBalance = await this.getTronUsdtBalance(wallet.externalAddress!, customerId);
-    }
-
-    if (Number(currentBalance) < usdtAmount) {
-      throw new BadRequestException(`Saldo insuficiente: ${currentBalance} USDT disponível, ${usdtAmount} USDT necessário`);
     }
 
     const okxNetwork = network === 'TRON' ? 'TRC20' : 'Solana';
@@ -1043,13 +1018,12 @@ export class WalletService {
         customerId,
         accountId: account.id,
         type: 'SELL',
-        walletId: wallet.id,
         brlCharged: 0,
         brlExchanged: quote.brlFromExchange,
         spreadPercent: quote.spreadPercent / 100,
         spreadBrl: quote.spreadBrl,
         usdtPurchased: usdtAmount,
-        usdtWithdrawn: usdtAmount,
+        usdtWithdrawn: 0,
         exchangeRate: quote.exchangeRate,
         network,
         walletAddress: depositAddress.address,
@@ -1062,52 +1036,21 @@ export class WalletService {
       },
     });
 
-    this.logger.log(`[SELL] Venda iniciada: ${usdtAmount} USDT da carteira ${wallet.externalAddress} → OKX`);
+    this.logger.log(`[SELL] Venda iniciada: ${usdtAmount} USDT → aguardando depósito em ${depositAddress.address}`);
 
-    try {
-      let txResult: { txId: string; success: boolean };
-      
-      if (network === 'SOLANA') {
-        txResult = await this.sendSolanaUsdt(walletId, customerId, depositAddress.address, usdtAmount);
-      } else {
-        txResult = await this.sendTronUsdt(walletId, customerId, depositAddress.address, usdtAmount);
-      }
-
-      await this.prisma.conversion.update({
-        where: { id: conversion.id },
-        data: { 
-          status: 'USDT_RECEIVED',
-          okxDepositId: txResult.txId,
-        },
-      });
-
-      this.logger.log(`[SELL] USDT enviado para OKX: txId ${txResult.txId}`);
-
-      return {
-        conversionId: conversion.id,
-        status: 'USDT_RECEIVED',
-        usdtAmount,
-        network,
-        txId: txResult.txId,
-        quote: {
-          brlToReceive: quote.brlToReceive,
-          exchangeRate: quote.exchangeRate,
-          spreadPercent: quote.spreadPercent,
-        },
-        message: 'USDT enviado para OKX. Aguardando confirmação para conversão em BRL.',
-      };
-    } catch (error: any) {
-      await this.prisma.conversion.update({
-        where: { id: conversion.id },
-        data: { 
-          status: 'FAILED',
-          errorMessage: error.message,
-        },
-      });
-
-      this.logger.error(`[SELL] Falha ao enviar USDT: ${error.message}`);
-      throw new BadRequestException(`Falha ao enviar USDT: ${error.message}`);
-    }
+    return {
+      conversionId: conversion.id,
+      status: 'PENDING',
+      usdtAmount,
+      network,
+      depositAddress: depositAddress.address,
+      quote: {
+        brlToReceive: quote.brlToReceive,
+        exchangeRate: quote.exchangeRate,
+        spreadPercent: quote.spreadPercent,
+      },
+      message: `Envie ${usdtAmount} USDT para o endereço acima. Após confirmação, o BRL será creditado na sua conta OTSEM.`,
+    };
   }
 
   /**
@@ -1128,8 +1071,8 @@ export class WalletService {
       throw new BadRequestException('Esta conversão não é do tipo SELL');
     }
 
-    if (conversion.status !== 'USDT_RECEIVED') {
-      throw new BadRequestException(`Status inválido: ${conversion.status}. Esperado: USDT_RECEIVED`);
+    if (conversion.status !== 'PENDING' && conversion.status !== 'USDT_RECEIVED') {
+      throw new BadRequestException(`Status inválido: ${conversion.status}. Esperado: PENDING ou USDT_RECEIVED`);
     }
 
     this.logger.log(`[SELL] Processando venda ${conversionId}: ${conversion.usdtPurchased} USDT`);
