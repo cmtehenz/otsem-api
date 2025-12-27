@@ -263,12 +263,8 @@ export class AffiliatesService {
 
   async getAffiliateSpreadForCustomer(customerId: string): Promise<{
     affiliate: { id: string; code: string; spreadRate: number } | null;
-    spreadBase: number;
     spreadAffiliate: number;
-    spreadTotal: number;
   }> {
-    const spreadBase = 0.0065; // 0.65% base
-
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
       include: { affiliate: true },
@@ -277,14 +273,11 @@ export class AffiliatesService {
     if (!customer?.affiliate || !customer.affiliate.isActive) {
       return {
         affiliate: null,
-        spreadBase,
         spreadAffiliate: 0,
-        spreadTotal: spreadBase,
       };
     }
 
     const spreadAffiliate = Number(customer.affiliate.spreadRate);
-    const spreadTotal = spreadBase + spreadAffiliate;
 
     return {
       affiliate: {
@@ -292,9 +285,7 @@ export class AffiliatesService {
         code: customer.affiliate.code,
         spreadRate: spreadAffiliate,
       },
-      spreadBase,
       spreadAffiliate,
-      spreadTotal,
     };
   }
 }

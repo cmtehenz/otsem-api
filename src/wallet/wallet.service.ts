@@ -1,10 +1,11 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Keypair, Connection, PublicKey } from '@solana/web3.js';
 import { PrismaService } from '../prisma/prisma.service';
 import { InterPixService } from '../inter/services/inter-pix.service';
 import { PixKeyType } from '../inter/dto/send-pix.dto';
 import { OkxService } from '../okx/services/okx.service';
 import { TronService } from '../tron/tron.service';
+import { AffiliatesService } from '../affiliates/affiliates.service';
 import { WalletNetwork, TransactionType } from '@prisma/client';
 
 @Injectable()
@@ -16,6 +17,8 @@ export class WalletService {
     private readonly interPixService: InterPixService,
     private readonly okxService: OkxService,
     private readonly tronService: TronService,
+    @Inject(forwardRef(() => AffiliatesService))
+    private readonly affiliatesService: AffiliatesService,
   ) { }
 
   getTronService() {
@@ -281,16 +284,29 @@ export class WalletService {
       throw new Error('Saldo insuficiente em BRL (mínimo R$10)');
     }
 
-    // Spread configurável por usuário (default: 1.0 = sem spread). Campo está em User.spreadValue
+    // Obter spread base do User.spreadValue (legacy) + spread do afiliado
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
-      select: { user: { select: { spreadValue: true } } },
+      select: { user: { select: { spreadValue: true } }, affiliateId: true },
     });
-    const spreadRateRaw = customer?.user?.spreadValue ? Number(customer.user.spreadValue) : 1;
-    const spreadRate = Number.isFinite(spreadRateRaw) && spreadRateRaw > 0 ? spreadRateRaw : 1;
-
+    
+    // User.spreadValue é um multiplicador (ex: 0.95 = 5% spread, 1.0 = sem spread)
+    const userSpreadMultiplier = customer?.user?.spreadValue ? Number(customer.user.spreadValue) : 1;
+    const baseSpreadRate = Number.isFinite(userSpreadMultiplier) && userSpreadMultiplier > 0 ? userSpreadMultiplier : 1;
+    const baseSpreadPercent = 1 - baseSpreadRate; // ex: 1 - 0.95 = 0.05 (5%)
+    
+    // Obter spread adicional do afiliado
+    const affiliateSpread = await this.affiliatesService.getAffiliateSpreadForCustomer(customerId);
+    const affiliateSpreadPercent = affiliateSpread.spreadAffiliate; // ex: 0.0035 (0.35%)
+    
+    // Spread total = base + afiliado
+    const totalSpreadPercent = baseSpreadPercent + affiliateSpreadPercent;
+    const spreadRate = 1 - totalSpreadPercent;
+    
     const brlToExchange = Number((brlAmount * spreadRate).toFixed(2));
     const spreadAmount = Number((brlAmount - brlToExchange).toFixed(2));
+    
+    this.logger.log(`[Conversion] Spread: userBase=${baseSpreadPercent.toFixed(4)}, affiliate=${affiliateSpreadPercent.toFixed(4)}, total=${totalSpreadPercent.toFixed(4)}, rate=${spreadRate.toFixed(4)}`);
 
     const stages: { pixTransfer: string; conversion: string; usdtTransfer: string } = {
       pixTransfer: 'pending', // 1 - transferindo reais via PIX para OKX
@@ -463,6 +479,21 @@ export class WalletService {
         }
       }
 
+      // 6) Registrar comissão do afiliado (se aplicável)
+      let affiliateCommission = null;
+      if (affiliateSpread.affiliate && affiliateSpreadPercent > 0) {
+        affiliateCommission = await this.affiliatesService.recordCommission({
+          affiliateId: affiliateSpread.affiliate.id,
+          customerId,
+          transactionId: pixResult?.endToEndId,
+          transactionAmount: brlAmount,
+          spreadTotal: totalSpreadPercent,
+          spreadBase: baseSpreadPercent,
+          spreadAffiliate: affiliateSpreadPercent,
+        });
+        this.logger.log(`[Affiliate] Commission recorded: R$ ${(brlAmount * affiliateSpreadPercent).toFixed(2)} for ${affiliateSpread.affiliate.code}`);
+      }
+
       return {
         message: 'Compra e transferência de USDT concluída',
         pixResult,
@@ -476,7 +507,14 @@ export class WalletService {
           exchangedBrl: brlToExchange,
           spreadBrl: spreadAmount,
           spreadRate,
+          base: baseSpreadPercent,
+          affiliate: affiliateSpreadPercent,
+          total: totalSpreadPercent,
         },
+        affiliateCommission: affiliateCommission ? {
+          affiliateCode: affiliateSpread.affiliate?.code,
+          commissionBrl: Number(affiliateCommission.commissionBrl),
+        } : null,
         stages,
         wallet: { id: wallet.id, network: wallet.network, address: wallet.externalAddress },
       };

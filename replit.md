@@ -86,6 +86,40 @@ Legacy models (Deposit, Payment) are kept for backward compatibility.
 
 ## Recent Changes (Dec 2025)
 
+### Affiliate System (Dec 27)
+Added affiliate/referral system for commission-based earnings on conversions:
+
+**Models**:
+- `Affiliate` - Affiliate profile with code, spreadRate, payout wallet
+- `AffiliateCommission` - Tracks each commission earned
+- `Customer.affiliateId` - Links customer to referring affiliate
+
+**Spread Calculation**:
+- `User.spreadValue` = base spread multiplier (default 1.0 = 0% spread, 0.95 = 5% spread)
+- `Affiliate.spreadRate` = additional affiliate spread (e.g., 0.0035 = 0.35%)
+- Total spread = baseSpread + affiliateSpread
+- Example: User.spreadValue=0.95 (5%) + Affiliate.spreadRate=0.0035 (0.35%) = 5.35% total spread
+
+**Admin Endpoints** (`/admin/affiliates`):
+- `POST /admin/affiliates` - Create affiliate with code and spreadRate
+- `GET /admin/affiliates` - List affiliates with pagination
+- `GET /admin/affiliates/:id` - Get affiliate details + referred customers
+- `PATCH /admin/affiliates/:id` - Update affiliate settings
+- `PATCH /admin/affiliates/:id/toggle-active` - Enable/disable affiliate
+- `GET /admin/affiliates/:id/commissions` - List affiliate's commissions
+- `POST /admin/affiliates/:id/pay-commissions` - Mark commissions as paid
+
+**Public Endpoints** (`/affiliates`):
+- `GET /affiliates/validate/:code` - Validate affiliate code (returns name if valid)
+
+**Commission Flow**:
+1. Customer registers with affiliate code → linked via `affiliateId`
+2. Customer makes BRL→USDT conversion
+3. System calculates: baseSpread + affiliateSpread = totalSpread
+4. After successful conversion, commission is recorded in `AffiliateCommission`
+5. Affiliate's `pendingEarnings` is incremented
+6. Admin marks commissions as paid → moves to `totalEarnings`
+
 ### OKX Whitelist Management (Dec 26)
 Added `okxWhitelisted` field to Wallet model for tracking OKX withdrawal address whitelist status:
 - **New field**: `okxWhitelisted` (boolean) - true if address is whitelisted on OKX
