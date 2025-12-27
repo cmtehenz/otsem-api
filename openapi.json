@@ -2292,6 +2292,43 @@
         ]
       }
     },
+    "/wallet/quote-usdt": {
+      "get": {
+        "operationId": "WalletController_getUsdtQuote",
+        "parameters": [
+          {
+            "name": "brlAmount",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "walletId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cotação: quanto USDT o cliente recebe por X BRL",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/wallet/buy-usdt-with-brl": {
       "post": {
         "operationId": "WalletController_buyUsdtWithBrl",

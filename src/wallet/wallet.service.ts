@@ -278,6 +278,79 @@ export class WalletService {
     });
   }
 
+  async getUsdtQuote(customerId: string, brlAmount: number, walletId?: string) {
+    const account = await this.prisma.account.findFirst({ where: { customerId } });
+    const balance = account ? Number(account.balance) : 0;
+
+    let wallet: any = null;
+    if (walletId) {
+      wallet = await this.prisma.wallet.findFirst({
+        where: { id: walletId, customerId, currency: 'USDT' },
+      });
+    } else {
+      wallet = await this.prisma.wallet.findFirst({
+        where: { customerId, currency: 'USDT', isMain: true, okxWhitelisted: true },
+      });
+      if (!wallet) {
+        wallet = await this.prisma.wallet.findFirst({
+          where: { customerId, currency: 'USDT', okxWhitelisted: true },
+        });
+      }
+    }
+
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { user: { select: { spreadValue: true } } },
+    });
+
+    const userSpreadMultiplier = customer?.user?.spreadValue ? Number(customer.user.spreadValue) : 1;
+    const baseSpreadRate = Number.isFinite(userSpreadMultiplier) && userSpreadMultiplier > 0 ? userSpreadMultiplier : 1;
+    const baseSpreadPercent = 1 - baseSpreadRate;
+
+    const affiliateSpread = await this.affiliatesService.getAffiliateSpreadForCustomer(customerId);
+    const affiliateSpreadPercent = affiliateSpread.spreadAffiliate;
+    const totalSpreadPercent = baseSpreadPercent + affiliateSpreadPercent;
+    const spreadRate = 1 - totalSpreadPercent;
+
+    const brlExchanged = Number((brlAmount * spreadRate).toFixed(2));
+    const spreadBrl = Number((brlAmount - brlExchanged).toFixed(2));
+
+    const okxRate = await this.okxService.getBrlToUsdtRate();
+    const exchangeRate = okxRate || 5.5;
+    const usdtEstimate = Number((brlExchanged / exchangeRate).toFixed(2));
+
+    const network = wallet?.network || 'SOLANA';
+    const networkFee = network === 'TRON' ? 2.1 : 1.0;
+    const usdtNet = Math.max(0, usdtEstimate - networkFee);
+
+    const minBrl = networkFee * exchangeRate * (1 / spreadRate) + 1;
+
+    return {
+      brlAmount,
+      brlExchanged,
+      spreadPercent: Math.round(totalSpreadPercent * 10000) / 100,
+      spreadBrl,
+      exchangeRate,
+      usdtEstimate,
+      network,
+      networkFeeUsdt: networkFee,
+      networkFeeBrl: Number((networkFee * exchangeRate).toFixed(2)),
+      usdtNet,
+      wallet: wallet ? {
+        id: wallet.id,
+        address: wallet.externalAddress,
+        network: wallet.network,
+        whitelisted: wallet.okxWhitelisted,
+      } : null,
+      balanceBrl: balance,
+      canProceed: balance >= brlAmount && brlAmount >= 10 && usdtNet > 0 && wallet?.okxWhitelisted,
+      minBrlRecommended: Math.ceil(minBrl),
+      message: usdtNet <= 0 
+        ? `Valor mínimo para esta rede: R$ ${Math.ceil(minBrl)}` 
+        : `Você receberá ${usdtNet.toFixed(2)} USDT`,
+    };
+  }
+
   async buyUsdtWithBrl(customerId: string, brlAmount: number, walletId?: string) {
     const account = await this.prisma.account.findFirst({ where: { customerId } });
     if (!account || Number(account.balance) < brlAmount || brlAmount < 10) {
@@ -504,7 +577,7 @@ export class WalletService {
       const totalOkxFees = okxWithdrawFeeBrl + okxTradingFee;
       const affiliateCommissionBrl = affiliateCommission ? Number(affiliateCommission.commissionBrl) : 0;
       const grossProfit = spreadAmount;
-      const netProfit = grossProfit - totalOkxFees - affiliateCommissionBrl;
+      const netProfit = grossProfit - okxTradingFee - affiliateCommissionBrl;
 
       const conversionTx = await this.prisma.transaction.findFirst({
         where: { externalId: conversionId },

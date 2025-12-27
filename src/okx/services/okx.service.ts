@@ -71,6 +71,26 @@ export class OkxService {
         return usdt ? usdt.availBal : '0';
     }
 
+    async getBrlToUsdtRate(): Promise<number> {
+        try {
+            const method = 'GET';
+            const requestPath = '/api/v5/market/ticker?instId=USDT-BRL';
+            const body = '';
+            const headers = this.authService.getAuthHeaders(method, requestPath, body);
+            const apiUrl = process.env.OKX_API_URL || 'https://www.okx.com';
+
+            const response = await axios.get(`${apiUrl}${requestPath}`, { headers });
+            const ticker = response.data?.data?.[0];
+            if (ticker?.last) {
+                return parseFloat(ticker.last);
+            }
+            return 5.5;
+        } catch (error) {
+            console.error('Erro ao obter taxa BRL/USDT:', error);
+            return 5.5;
+        }
+    }
+
     async buyUsdtWithBrl(brlAmount: number): Promise<any> {
         const method = 'POST';
         const requestPath = '/api/v5/trade/order';

@@ -144,6 +144,19 @@ export class WalletController {
     return this.walletService.deleteWallet(id, customerId);
   }
 
+  @Get('quote-usdt')
+  @ApiOperation({ summary: 'Cotação: quanto USDT o cliente recebe por X BRL' })
+  @ApiQuery({ name: 'brlAmount', type: Number, required: true })
+  @ApiQuery({ name: 'walletId', type: String, required: false })
+  async getUsdtQuote(
+    @Req() req: AuthRequest,
+    @Query('brlAmount') brlAmount: string,
+    @Query('walletId') walletId?: string,
+  ) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.getUsdtQuote(customerId, Number(brlAmount), walletId);
+  }
+
   @Post('buy-usdt-with-brl')
   @ApiOperation({ summary: 'Comprar USDT com BRL e transferir para wallet' })
   async buyUsdtWithBrl(
