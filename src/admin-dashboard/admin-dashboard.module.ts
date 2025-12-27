@@ -11,6 +11,8 @@ import { AdminUsersService } from './admin-users.service';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminWalletsService } from './admin-wallets.service';
 import { AdminWalletsController } from './admin-wallets.controller';
+import { AdminConversionsService } from './admin-conversions.service';
+import { AdminConversionsController } from './admin-conversions.controller';
 
 @Module({
   imports: [
@@ -20,8 +22,8 @@ import { AdminWalletsController } from './admin-wallets.controller';
     forwardRef(() => OkxModule),
     forwardRef(() => FdbankModule),
   ],
-  controllers: [AdminDashboardController, AdminUsersController, AdminWalletsController],
-  providers: [AdminDashboardService, AdminUsersService, AdminWalletsService],
-  exports: [AdminDashboardService, AdminUsersService, AdminWalletsService],
+  controllers: [AdminDashboardController, AdminUsersController, AdminWalletsController, AdminConversionsController],
+  providers: [AdminDashboardService, AdminUsersService, AdminWalletsService, AdminConversionsService],
+  exports: [AdminDashboardService, AdminUsersService, AdminWalletsService, AdminConversionsService],
 })
 export class AdminDashboardModule { }

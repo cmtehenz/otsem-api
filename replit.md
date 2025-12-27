@@ -132,6 +132,22 @@ Added affiliate/referral system for commission-based earnings on conversions:
 5. Affiliate's `pendingEarnings` is incremented
 6. Admin marks commissions as paid → moves to `totalEarnings`
 
+### Admin Conversions Endpoints (Dec 27)
+Added admin endpoints for viewing and analyzing BRL→USDT conversions:
+
+**Endpoints** (`/admin/conversions`):
+- `GET /admin/conversions` - List all conversions with filters (dateStart, dateEnd, customerId, affiliateId, status)
+- `GET /admin/conversions/stats` - Aggregated statistics for the filtered period
+
+**Response fields** (values in centavos):
+- `brlPaid`, `usdtCredited`, `exchangeRateUsed`, `spreadPercent`
+- `pixFee`, `okxFee`, `internalFee`, `totalFeesBrl`, `profitBrl`
+- `affiliate` (id, code, name), `affiliateCommissionBrl`
+- `okxOrderId`, `sourceOfBRL`
+
+**Stats response**:
+- `totalCount`, `volumeBrl`, `volumeUsdt`, `grossProfit`, `netProfit`, `avgRate`, `totalCommissions`
+
 ### OKX Whitelist Management (Dec 26)
 Added `okxWhitelisted` field to Wallet model for tracking OKX withdrawal address whitelist status:
 - **New field**: `okxWhitelisted` (boolean) - true if address is whitelisted on OKX

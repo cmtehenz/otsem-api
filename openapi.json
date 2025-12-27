@@ -4071,6 +4071,154 @@
         ]
       }
     },
+    "/admin/conversions": {
+      "get": {
+        "operationId": "AdminConversionsController_list",
+        "parameters": [
+          {
+            "name": "dateStart",
+            "required": false,
+            "in": "query",
+            "description": "Data início (ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateEnd",
+            "required": false,
+            "in": "query",
+            "description": "Data fim (ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "affiliateId",
+            "required": false,
+            "in": "query",
+            "description": "ID do afiliado",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Status da conversão",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "PROCESSING",
+                "COMPLETED",
+                "FAILED",
+                "REVERSED",
+                "CANCELED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de conversões"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista todas as conversões BRL→USDT",
+        "tags": [
+          "Admin Conversions"
+        ]
+      }
+    },
+    "/admin/conversions/stats": {
+      "get": {
+        "operationId": "AdminConversionsController_stats",
+        "parameters": [
+          {
+            "name": "dateStart",
+            "required": false,
+            "in": "query",
+            "description": "Data início (ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateEnd",
+            "required": false,
+            "in": "query",
+            "description": "Data fim (ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "description": "ID do cliente",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "affiliateId",
+            "required": false,
+            "in": "query",
+            "description": "ID do afiliado",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Status da conversão",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "PROCESSING",
+                "COMPLETED",
+                "FAILED",
+                "REVERSED",
+                "CANCELED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estatísticas"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Estatísticas agregadas de conversões",
+        "tags": [
+          "Admin Conversions"
+        ]
+      }
+    },
     "/payments": {
       "get": {
         "operationId": "PaymentsController_listPayments",
