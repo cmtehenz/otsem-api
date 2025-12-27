@@ -577,7 +577,7 @@ export class WalletService {
       const totalOkxFees = okxWithdrawFeeBrl + okxTradingFee;
       const affiliateCommissionBrl = affiliateCommission ? Number(affiliateCommission.commissionBrl) : 0;
       const grossProfit = spreadAmount;
-      const netProfit = grossProfit - okxTradingFee - affiliateCommissionBrl;
+      const netProfit = grossProfit - totalOkxFees - affiliateCommissionBrl;
 
       const conversionTx = await this.prisma.transaction.findFirst({
         where: { externalId: conversionId },
