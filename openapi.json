@@ -3898,6 +3898,244 @@
           "Transactions"
         ]
       }
+    },
+    "/admin/affiliates": {
+      "post": {
+        "operationId": "AffiliatesController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Criar novo afiliado",
+        "tags": [
+          "Admin - Affiliates"
+        ]
+      },
+      "get": {
+        "operationId": "AffiliatesController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar afiliados",
+        "tags": [
+          "Admin - Affiliates"
+        ]
+      }
+    },
+    "/admin/affiliates/{id}": {
+      "get": {
+        "operationId": "AffiliatesController_findById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buscar afiliado por ID",
+        "tags": [
+          "Admin - Affiliates"
+        ]
+      },
+      "patch": {
+        "operationId": "AffiliatesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualizar afiliado",
+        "tags": [
+          "Admin - Affiliates"
+        ]
+      }
+    },
+    "/admin/affiliates/{id}/toggle-active": {
+      "patch": {
+        "operationId": "AffiliatesController_toggleActive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ativar/desativar afiliado",
+        "tags": [
+          "Admin - Affiliates"
+        ]
+      }
+    },
+    "/admin/affiliates/{id}/commissions": {
+      "get": {
+        "operationId": "AffiliatesController_getCommissions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar comissões do afiliado",
+        "tags": [
+          "Admin - Affiliates"
+        ]
+      }
+    },
+    "/admin/affiliates/{id}/pay-commissions": {
+      "post": {
+        "operationId": "AffiliatesController_payCommissions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar comissões como pagas",
+        "tags": [
+          "Admin - Affiliates"
+        ]
+      }
+    },
+    "/affiliates/validate/{code}": {
+      "get": {
+        "operationId": "PublicAffiliatesController_validateCode",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Validar código de afiliado",
+        "tags": [
+          "Affiliates"
+        ]
+      }
     }
   },
   "info": {

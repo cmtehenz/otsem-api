@@ -206,6 +206,10 @@ model Customer {
 
   mainPixKey String? @unique
 
+  // Afiliado que indicou este cliente
+  affiliateId String?
+  affiliate   Affiliate? @relation(fields: [affiliateId], references: [id])
+
   // Extras
   metadata Json?
 
@@ -227,6 +231,7 @@ model Customer {
   @@index([cpf])
   @@index([cnpj])
   @@index([externalClientId])
+  @@index([affiliateId])
 }
 
 model Address {
@@ -616,4 +621,62 @@ model WebhookLog {
   @@index([endToEnd])
   @@index([processed])
   @@map("webhook_logs")
+}
+
+// ==================== AFFILIATE SYSTEM ====================
+
+model Affiliate {
+  id          String  @id @default(cuid())
+  name        String
+  email       String  @unique
+  phone       String?
+  code        String  @unique // Código único para indicação (ex: "JOAO123")
+  
+  // Spread do afiliado (ex: 0.0035 = 0.35% que ele adiciona ao spread base)
+  spreadRate  Decimal @db.Decimal(10, 6) @default(0)
+  
+  // Wallet para receber comissões (opcional - pode ser Tron/Solana)
+  payoutWalletAddress String?
+  payoutWalletNetwork String? // TRON, SOLANA
+  
+  // Estatísticas
+  totalEarnings    Decimal @db.Decimal(18, 2) @default(0) // Total ganho em BRL
+  pendingEarnings  Decimal @db.Decimal(18, 2) @default(0) // Pendente de pagamento
+  
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Clientes indicados
+  referredCustomers Customer[]
+  commissions       AffiliateCommission[]
+  
+  @@index([code])
+  @@index([email])
+}
+
+model AffiliateCommission {
+  id           String @id @default(cuid())
+  affiliateId  String
+  customerId   String
+  transactionId String?
+  
+  // Valores
+  transactionAmount Decimal @db.Decimal(18, 2) // Valor da transação em BRL
+  spreadTotal       Decimal @db.Decimal(10, 6) // Spread total cobrado
+  spreadBase        Decimal @db.Decimal(10, 6) // Spread base (seu lucro)
+  spreadAffiliate   Decimal @db.Decimal(10, 6) // Spread do afiliado
+  commissionBrl     Decimal @db.Decimal(18, 2) // Comissão em BRL
+  
+  status    String   @default("PENDING") // PENDING, PAID, CANCELLED
+  paidAt    DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id])
+  
+  @@index([affiliateId])
+  @@index([customerId])
+  @@index([status])
 }

@@ -20,6 +20,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { PixKeysModule } from './pix-keys/pix-keys.module';
 import { DiditModule } from './didit/didit.module';
 import { TronModule } from './tron/tron.module';
+import { AffiliatesModule } from './affiliates/affiliates.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { TronModule } from './tron/tron.module';
     InterModule,
     PaymentsModule,
     TransactionsModule,
+    AffiliatesModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
