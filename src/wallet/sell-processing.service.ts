@@ -180,18 +180,27 @@ export class SellProcessingService {
     
     const tipoChave = customer.cpf ? 'CPF' : customer.cnpj ? 'CNPJ' : 'ALEATORIA';
     
+    const usdtAmount = parseFloat(conversion.usdtPurchased.toString());
     const spreadPercent = parseFloat(conversion.spreadPercent.toString());
     const brlExchanged = parseFloat(conversion.brlExchanged.toString());
+    const okxTradingFee = parseFloat(conversion.okxTradingFee?.toString() || '0');
+    const exchangeRate = parseFloat(conversion.exchangeRate?.toString() || (brlExchanged / usdtAmount).toString());
+    
     const spreadBrl = brlExchanged * spreadPercent;
-    const brlToCustomer = brlExchanged - spreadBrl;
+    const totalFees = spreadBrl + okxTradingFee;
+    const brlToCustomer = brlExchanged - totalFees;
+    
+    const grossProfit = spreadBrl;
+    const netProfit = spreadBrl - okxTradingFee;
     
     this.logger.log(`[SELL] Enviando PIX de R$ ${brlToCustomer.toFixed(2)} para ${pixKey}`);
+    this.logger.log(`[SELL] Detalhes: USDT=${usdtAmount}, BRL bruto=${brlExchanged.toFixed(2)}, spread=${spreadBrl.toFixed(2)}, taxaOKX=${okxTradingFee.toFixed(2)}, líquido=${brlToCustomer.toFixed(2)}`);
     
     const pixResult = await this.interPixService.sendPixInternal({
       valor: brlToCustomer,
       chaveDestino: pixKey,
       tipoChave,
-      descricao: `Venda USDT - ${conversion.usdtPurchased} USDT`,
+      descricao: `Venda USDT - ${usdtAmount} USDT`,
       nomeFavorecido: customer.name,
     });
     
@@ -206,6 +215,8 @@ export class SellProcessingService {
           pixEndToEnd: pixResult.endToEndId,
           pixDestKey: pixKey,
           pixDestKeyType: tipoChave,
+          grossProfit: new Decimal(grossProfit),
+          netProfit: new Decimal(netProfit),
           completedAt: new Date(),
         },
       }),
@@ -218,10 +229,26 @@ export class SellProcessingService {
           amount: new Decimal(brlToCustomer),
           balanceBefore: new Decimal(balanceBefore),
           balanceAfter: new Decimal(balanceBefore),
-          description: `Venda de ${conversion.usdtPurchased} USDT → R$ ${brlToCustomer.toFixed(2)} (PIX enviado)`,
+          description: `Venda de ${usdtAmount} USDT → R$ ${brlToCustomer.toFixed(2)} (PIX enviado)`,
           status: 'COMPLETED',
           externalId: conversion.txHash || conversion.id,
           endToEnd: pixResult.endToEndId,
+          externalData: {
+            usdtAmount,
+            brlExchanged,
+            spreadPercent,
+            spreadBrl,
+            okxTradingFee,
+            totalFees,
+            brlToCustomer,
+            exchangeRate,
+            grossProfit,
+            netProfit,
+            network: conversion.network,
+            txHash: conversion.txHash,
+            pixDestKey: pixKey,
+            pixDestKeyType: tipoChave,
+          },
         },
       }),
     ]);
@@ -328,6 +355,21 @@ export class SellProcessingService {
           description: `Venda de ${usdtAmount} USDT → R$ ${brlLiquido.toFixed(2)} (crédito manual)`,
           status: 'COMPLETED',
           externalId: txHash,
+          externalData: {
+            usdtAmount,
+            brlExchanged: brlBruto,
+            spreadPercent,
+            spreadBrl,
+            okxTradingFee: 0,
+            totalFees: spreadBrl,
+            brlToCustomer: brlLiquido,
+            exchangeRate: rate,
+            grossProfit: spreadBrl,
+            netProfit: spreadBrl,
+            network,
+            txHash,
+            manual: true,
+          },
         },
       }),
     ]);
