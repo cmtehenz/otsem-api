@@ -8,10 +8,12 @@ import { OkxModule } from '../okx/okx.module';
 import { TronModule } from '../tron/tron.module';
 import { SolanaModule } from '../solana/solana.module';
 import { AffiliatesModule } from '../affiliates/affiliates.module';
+import { SellProcessingService } from './sell-processing.service';
 
 @Module({
     imports: [InterModule, OkxModule, TronModule, SolanaModule, forwardRef(() => AffiliatesModule)],
-    providers: [WalletService, PrismaService, InterPixService],
+    providers: [WalletService, PrismaService, InterPixService, SellProcessingService],
     controllers: [WalletController],
+    exports: [SellProcessingService],
 })
 export class WalletModule { }

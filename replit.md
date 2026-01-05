@@ -127,8 +127,26 @@ O cliente assina a transação no frontend (chave privada nunca sai do dispositi
 1. `PENDING` - Transação submetida, aguardando confirmação blockchain
 2. `USDT_RECEIVED` - USDT confirmado na OKX
 3. `USDT_SOLD` - USDT vendido por BRL na OKX
-4. `COMPLETED` - BRL creditado no saldo OTSEM do cliente
+4. `COMPLETED` - PIX enviado para o cliente
+
+### Automated SELL Processing (SellProcessingService)
+
+O sistema possui um cron job que roda **a cada minuto** para processar vendas automaticamente:
+
+1. **Polling de Depósitos OKX**: Verifica novos depósitos na OKX
+2. **Matching por txHash ou Amount/Network/Time**: Associa depósitos a conversões pendentes
+3. **Venda Automática**: Vende USDT por BRL na OKX via market order
+4. **Envio de PIX**: Envia PIX para o cliente via Banco Inter
+5. **Detecção de Órfãos**: Alerta sobre depósitos não processados (sem conversão correspondente)
+
+**Arquivos chave:**
+- `src/wallet/sell-processing.service.ts` - Orquestra todo o fluxo automatizado
+- `src/okx/services/okx.service.ts` - `sellUsdtForBrl()`, `getRecentDeposits()`
+- `src/inter/services/inter-pix.service.ts` - `sendPixInternal()`
+
+**Importante:** O balance OTSEM do cliente **não muda** no SELL flow porque o PIX é enviado diretamente do Banco Inter para a conta bancária do cliente.
 
 ### Fee Model
 - **Cliente paga apenas spread**: 0.95% (padrão, configurável por usuário)
+- **spreadPercent** armazenado como decimal (0.0095 = 0.95%)
 - **netProfit = spreadBrl - totalOkxFees - affiliateCommission**
