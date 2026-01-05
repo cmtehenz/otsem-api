@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "conversions" ALTER COLUMN "usdtPurchased" DROP NOT NULL,
+ALTER COLUMN "usdtWithdrawn" DROP NOT NULL,
+ALTER COLUMN "exchangeRate" DROP NOT NULL,
+ALTER COLUMN "okxWithdrawFee" DROP NOT NULL,
+ALTER COLUMN "okxTradingFee" DROP NOT NULL,
+ALTER COLUMN "totalOkxFees" DROP NOT NULL,
+ALTER COLUMN "grossProfit" DROP NOT NULL,
+ALTER COLUMN "netProfit" DROP NOT NULL;
