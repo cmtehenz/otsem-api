@@ -272,4 +272,27 @@ export class WalletController {
     const customerId = this.getCustomerId(req);
     return this.walletService.submitSignedSellTransaction(customerId, walletId, usdtAmount, network, txHash);
   }
+
+  @Get('my-conversions')
+  @ApiOperation({ summary: 'Listar conversões do cliente (compras e vendas USDT)' })
+  @ApiQuery({ name: 'type', enum: ['BUY', 'SELL'], required: false })
+  @ApiQuery({ name: 'status', required: false })
+  async getMyConversions(
+    @Req() req: AuthRequest,
+    @Query('type') type?: 'BUY' | 'SELL',
+    @Query('status') status?: string,
+  ) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.getCustomerConversions(customerId, type, status);
+  }
+
+  @Get('conversion/:id')
+  @ApiOperation({ summary: 'Ver detalhes de uma conversão específica' })
+  async getConversionDetails(
+    @Req() req: AuthRequest,
+    @Param('id') id: string,
+  ) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.getConversionDetails(customerId, id);
+  }
 }

@@ -1526,4 +1526,83 @@ export class WalletService {
 
     return txData;
   }
+
+  async getCustomerConversions(customerId: string, type?: 'BUY' | 'SELL', status?: string) {
+    const where: any = { customerId };
+    if (type) where.type = type;
+    if (status) where.status = status;
+
+    const conversions = await this.prisma.conversion.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        network: true,
+        usdtPurchased: true,
+        brlCharged: true,
+        brlExchanged: true,
+        spreadBrl: true,
+        txHash: true,
+        createdAt: true,
+        completedAt: true,
+        errorMessage: true,
+      },
+    });
+
+    return conversions.map(c => ({
+      ...c,
+      usdtAmount: c.usdtPurchased ? parseFloat(c.usdtPurchased.toString()) : null,
+      brlAmount: c.brlExchanged ? parseFloat(c.brlExchanged.toString()) : (c.brlCharged ? parseFloat(c.brlCharged.toString()) : null),
+      spreadBrl: c.spreadBrl ? parseFloat(c.spreadBrl.toString()) : null,
+      statusLabel: this.getConversionStatusLabel(c.status),
+    }));
+  }
+
+  private getConversionStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      'PENDING': 'Aguardando confirmação do depósito',
+      'USDT_RECEIVED': 'USDT recebido, vendendo...',
+      'USDT_SOLD': 'USDT vendido, creditando saldo...',
+      'COMPLETED': 'Concluído',
+      'FAILED': 'Falhou',
+      'PIX_SENT': 'PIX enviado',
+      'USDT_BOUGHT': 'USDT comprado',
+      'USDT_WITHDRAWN': 'USDT enviado para sua carteira',
+    };
+    return labels[status] || status;
+  }
+
+  async getConversionDetails(customerId: string, conversionId: string) {
+    const conversion = await this.prisma.conversion.findFirst({
+      where: { id: conversionId, customerId },
+      include: {
+        wallet: { select: { externalAddress: true, network: true, label: true } },
+      },
+    });
+
+    if (!conversion) {
+      throw new NotFoundException('Conversão não encontrada');
+    }
+
+    return {
+      id: conversion.id,
+      type: conversion.type,
+      status: conversion.status,
+      statusLabel: this.getConversionStatusLabel(conversion.status),
+      network: conversion.network,
+      usdtAmount: conversion.usdtPurchased ? parseFloat(conversion.usdtPurchased.toString()) : null,
+      brlCharged: conversion.brlCharged ? parseFloat(conversion.brlCharged.toString()) : null,
+      brlExchanged: conversion.brlExchanged ? parseFloat(conversion.brlExchanged.toString()) : null,
+      spreadBrl: conversion.spreadBrl ? parseFloat(conversion.spreadBrl.toString()) : null,
+      exchangeRate: conversion.exchangeRate ? parseFloat(conversion.exchangeRate.toString()) : null,
+      txHash: conversion.txHash,
+      walletAddress: conversion.walletAddress || conversion.wallet?.externalAddress,
+      createdAt: conversion.createdAt,
+      completedAt: conversion.completedAt,
+      errorMessage: conversion.errorMessage,
+    };
+  }
 }

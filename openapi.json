@@ -2680,6 +2680,76 @@
         ]
       }
     },
+    "/wallet/my-conversions": {
+      "get": {
+        "operationId": "WalletController_getMyConversions",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "BUY",
+                "SELL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar conversões do cliente (compras e vendas USDT)",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/wallet/conversion/{id}": {
+      "get": {
+        "operationId": "WalletController_getConversionDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ver detalhes de uma conversão específica",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/inter/webhooks/{tipoWebhook}/callbacks": {
       "get": {
         "operationId": "InterWebhookController_getCallbacks",
