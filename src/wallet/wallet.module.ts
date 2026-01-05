@@ -6,10 +6,11 @@ import { InterPixService } from '../inter/services/inter-pix.service';
 import { InterModule } from '../inter/inter.module';
 import { OkxModule } from '../okx/okx.module';
 import { TronModule } from '../tron/tron.module';
+import { SolanaModule } from '../solana/solana.module';
 import { AffiliatesModule } from '../affiliates/affiliates.module';
 
 @Module({
-    imports: [InterModule, OkxModule, TronModule, forwardRef(() => AffiliatesModule)],
+    imports: [InterModule, OkxModule, TronModule, SolanaModule, forwardRef(() => AffiliatesModule)],
     providers: [WalletService, PrismaService, InterPixService],
     controllers: [WalletController],
 })

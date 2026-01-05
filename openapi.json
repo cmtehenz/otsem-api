@@ -2302,6 +2302,55 @@
         ]
       }
     },
+    "/wallet/gasless-sell-tx-data": {
+      "get": {
+        "operationId": "WalletController_getGaslessSellTxData",
+        "parameters": [
+          {
+            "name": "walletId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "usdtAmount",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "network",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "SOLANA",
+                "TRON"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obter dados para venda gasless - sistema paga taxa de rede e desconta do BRL final",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/wallet/quote-usdt": {
       "get": {
         "operationId": "WalletController_getUsdtQuote",

@@ -9,8 +9,12 @@ import { InterPixService } from '../inter/services/inter-pix.service';
 import { PixKeyType } from '../inter/dto/send-pix.dto';
 import { OkxService } from '../okx/services/okx.service';
 import { TronService } from '../tron/tron.service';
+import { SolanaService } from '../solana/solana.service';
 import { AffiliatesService } from '../affiliates/affiliates.service';
 import { WalletNetwork, TransactionType } from '@prisma/client';
+
+const SOL_FEE_FOR_USDT_TRANSFER = 0.005;
+const TRX_FEE_FOR_USDT_TRANSFER = 15;
 
 @Injectable()
 export class WalletService {
@@ -21,6 +25,7 @@ export class WalletService {
     private readonly interPixService: InterPixService,
     private readonly okxService: OkxService,
     private readonly tronService: TronService,
+    private readonly solanaService: SolanaService,
     @Inject(forwardRef(() => AffiliatesService))
     private readonly affiliatesService: AffiliatesService,
   ) { }
@@ -298,16 +303,12 @@ export class WalletService {
     const senderPubkey = new PublicKey(wallet.externalAddress);
     const recipientPubkey = new PublicKey(toAddress);
     
-    const senderAta = await splToken.Token.getAssociatedTokenAddress(
-      splToken.ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
+    const senderAta = await splToken.getAssociatedTokenAddress(
       USDT_MINT_SOLANA,
       senderPubkey,
     );
     
-    const recipientAta = await splToken.Token.getAssociatedTokenAddress(
-      splToken.ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
+    const recipientAta = await splToken.getAssociatedTokenAddress(
       USDT_MINT_SOLANA,
       recipientPubkey,
     );
@@ -321,12 +322,10 @@ export class WalletService {
     
     const amountInMicroUnits = Math.floor(amount * 1e6);
     
-    const transferInstruction = splToken.Token.createTransferInstruction(
-      TOKEN_PROGRAM_ID,
+    const transferInstruction = splToken.createTransferInstruction(
       senderAta,
       recipientAta,
       senderPubkey,
-      [],
       amountInMicroUnits,
     );
     
@@ -1375,5 +1374,127 @@ export class WalletService {
       message: 'Transação registrada. Após confirmação na blockchain e depósito na OKX, o BRL será creditado.',
       nextStep: 'Aguarde confirmação. Use GET /wallet/pending-sell-deposits para verificar status.',
     };
+  }
+
+  async getGaslessSellTransactionData(
+    customerId: string,
+    walletId: string,
+    usdtAmount: number,
+    network: 'SOLANA' | 'TRON',
+  ) {
+    if (usdtAmount < 10) {
+      throw new BadRequestException('Quantidade mínima é 10 USDT');
+    }
+
+    const wallet = await this.prisma.wallet.findFirst({
+      where: { id: walletId, customerId },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException('Carteira não encontrada');
+    }
+
+    if (wallet.network !== network) {
+      throw new BadRequestException(`Carteira é da rede ${wallet.network}, não ${network}`);
+    }
+
+    if (!wallet.externalAddress) {
+      throw new BadRequestException('Carteira não possui endereço externo');
+    }
+
+    const feeAmount = network === 'SOLANA' ? SOL_FEE_FOR_USDT_TRANSFER : TRX_FEE_FOR_USDT_TRANSFER;
+    const feeCurrency = network === 'SOLANA' ? 'SOL' : 'TRX';
+
+    let feeTxHash: string | null = null;
+    let feeUsd = 0;
+
+    if (network === 'SOLANA') {
+      const currentSolBalance = await this.solanaService.getSolBalance(wallet.externalAddress);
+      
+      if (currentSolBalance < feeAmount) {
+        this.logger.log(`[GASLESS] Enviando ${feeAmount} SOL para ${wallet.externalAddress}`);
+        try {
+          const result = await this.solanaService.sendSol(wallet.externalAddress, feeAmount);
+          feeTxHash = result.txId;
+          this.logger.log(`[GASLESS] SOL enviado com sucesso: ${feeTxHash}`);
+        } catch (error: any) {
+          this.logger.error(`[GASLESS] Erro ao enviar SOL: ${error.message}`);
+          throw new BadRequestException(`Falha ao enviar taxa de rede: ${error.message}`);
+        }
+      } else {
+        this.logger.log(`[GASLESS] Carteira já tem ${currentSolBalance} SOL, não precisa enviar mais`);
+      }
+      
+      const solPrice = 200;
+      feeUsd = feeAmount * solPrice;
+    } else {
+      const currentTrxBalance = await this.tronService.getTrxBalance(wallet.externalAddress);
+      
+      if (currentTrxBalance < feeAmount) {
+        this.logger.log(`[GASLESS] Enviando ${feeAmount} TRX para ${wallet.externalAddress}`);
+        try {
+          const result = await this.tronService.sendTrx(wallet.externalAddress, feeAmount);
+          feeTxHash = result.txId;
+          this.logger.log(`[GASLESS] TRX enviado com sucesso: ${feeTxHash}`);
+        } catch (error: any) {
+          this.logger.error(`[GASLESS] Erro ao enviar TRX: ${error.message}`);
+          throw new BadRequestException(`Falha ao enviar taxa de rede: ${error.message}`);
+        }
+      } else {
+        this.logger.log(`[GASLESS] Carteira já tem ${currentTrxBalance} TRX, não precisa enviar mais`);
+      }
+      
+      const trxPrice = 0.25;
+      feeUsd = feeAmount * trxPrice;
+    }
+
+    const depositAddress = await this.getUsdtDepositAddress(network);
+    const quote = await this.quoteSellUsdt(customerId, usdtAmount, network);
+
+    const networkFeeBrl = feeUsd * quote.exchangeRate;
+
+    const txData: any = {
+      network,
+      fromAddress: wallet.externalAddress,
+      toAddress: depositAddress.address,
+      usdtAmount,
+      usdtAmountRaw: Math.floor(usdtAmount * 1_000_000),
+      gasless: {
+        feeSent: feeTxHash ? true : false,
+        feeTxHash,
+        feeAmount,
+        feeCurrency,
+        feeUsd,
+        feeBrl: networkFeeBrl,
+      },
+      quote: {
+        brlToReceive: quote.brlToReceive - networkFeeBrl,
+        brlToReceiveBeforeFee: quote.brlToReceive,
+        networkFeeBrl,
+        exchangeRate: quote.exchangeRate,
+        spreadPercent: quote.spreadPercent,
+      },
+    };
+
+    if (network === 'SOLANA') {
+      txData.tokenMint = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
+      txData.tokenProgram = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+      txData.decimals = 6;
+      txData.instructions = [
+        'Use @solana/web3.js e @solana/spl-token para criar transferência SPL Token',
+        'Assine com Keypair.fromSecretKey(privateKey)',
+        'Envie com sendAndConfirmTransaction()',
+      ];
+    } else {
+      txData.contractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+      txData.decimals = 6;
+      txData.instructions = [
+        'Use TronWeb para criar transferência TRC20',
+        'contract.methods.transfer(toAddress, amount).send()',
+        'Assine com sua privateKey configurada no TronWeb',
+      ];
+    }
+
+    return txData;
   }
 }

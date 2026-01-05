@@ -135,6 +135,21 @@ export class WalletController {
     return this.walletService.getSellTransactionData(customerId, walletId, Number(usdtAmount), network);
   }
 
+  @Get('gasless-sell-tx-data')
+  @ApiOperation({ summary: 'Obter dados para venda gasless - sistema paga taxa de rede e desconta do BRL final' })
+  @ApiQuery({ name: 'walletId', type: String, required: true })
+  @ApiQuery({ name: 'usdtAmount', type: Number, required: true })
+  @ApiQuery({ name: 'network', enum: ['SOLANA', 'TRON'], required: true })
+  async getGaslessSellTxData(
+    @Req() req: AuthRequest,
+    @Query('walletId') walletId: string,
+    @Query('usdtAmount') usdtAmount: string,
+    @Query('network') network: 'SOLANA' | 'TRON',
+  ) {
+    const customerId = this.getCustomerId(req);
+    return this.walletService.getGaslessSellTransactionData(customerId, walletId, Number(usdtAmount), network);
+  }
+
   @Get('quote-usdt')
   @ApiOperation({ summary: 'Cotação: quanto USDT o cliente recebe por X BRL' })
   @ApiQuery({ name: 'brlAmount', type: Number, required: true })
