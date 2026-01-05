@@ -157,4 +157,25 @@ export class SolanaService implements OnModuleInit {
       return 'pending';
     }
   }
+
+  async getAssociatedTokenAddress(walletAddress: string): Promise<string> {
+    const pubkey = new PublicKey(walletAddress);
+    const ata = await splToken.getAssociatedTokenAddress(USDT_MINT, pubkey);
+    return ata.toBase58();
+  }
+
+  async checkAtaExists(walletAddress: string): Promise<boolean> {
+    try {
+      const pubkey = new PublicKey(walletAddress);
+      const ata = await splToken.getAssociatedTokenAddress(USDT_MINT, pubkey);
+      await splToken.getAccount(this.connection, ata);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  getUsdtMint(): string {
+    return USDT_MINT.toBase58();
+  }
 }

@@ -1253,6 +1253,10 @@ export class WalletService {
       throw new BadRequestException(`Carteira é da rede ${wallet.network}, não ${network}`);
     }
 
+    if (!wallet.externalAddress) {
+      throw new BadRequestException('Carteira não possui endereço externo');
+    }
+
     const depositAddress = await this.getUsdtDepositAddress(network);
     const quote = await this.quoteSellUsdt(customerId, usdtAmount, network);
 
@@ -1270,13 +1274,25 @@ export class WalletService {
     };
 
     if (network === 'SOLANA') {
+      const [fromAta, toAta, toAtaExists] = await Promise.all([
+        this.solanaService.getAssociatedTokenAddress(wallet.externalAddress),
+        this.solanaService.getAssociatedTokenAddress(depositAddress.address),
+        this.solanaService.checkAtaExists(depositAddress.address),
+      ]);
+      
       txData.tokenMint = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
       txData.tokenProgram = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+      txData.associatedTokenProgram = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
       txData.decimals = 6;
+      txData.fromAta = fromAta;
+      txData.toAta = toAta;
+      txData.toAtaExists = toAtaExists;
       txData.instructions = [
-        'Use @solana/web3.js e @solana/spl-token para criar transferência SPL Token',
-        'Assine com Keypair.fromSecretKey(privateKey)',
-        'Envie com sendAndConfirmTransaction()',
+        'Use @solana/spl-token para criar transferência SPL Token',
+        'Fonte: fromAta, Destino: toAta',
+        toAtaExists 
+          ? 'ATA destino já existe, use transfer() diretamente'
+          : 'ATA destino NÃO existe, use getOrCreateAssociatedTokenAccount() antes de transfer()',
       ];
     } else {
       txData.contractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
@@ -1477,13 +1493,25 @@ export class WalletService {
     };
 
     if (network === 'SOLANA') {
+      const [fromAta, toAta, toAtaExists] = await Promise.all([
+        this.solanaService.getAssociatedTokenAddress(wallet.externalAddress),
+        this.solanaService.getAssociatedTokenAddress(depositAddress.address),
+        this.solanaService.checkAtaExists(depositAddress.address),
+      ]);
+      
       txData.tokenMint = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
       txData.tokenProgram = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+      txData.associatedTokenProgram = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
       txData.decimals = 6;
+      txData.fromAta = fromAta;
+      txData.toAta = toAta;
+      txData.toAtaExists = toAtaExists;
       txData.instructions = [
-        'Use @solana/web3.js e @solana/spl-token para criar transferência SPL Token',
-        'Assine com Keypair.fromSecretKey(privateKey)',
-        'Envie com sendAndConfirmTransaction()',
+        'Use @solana/spl-token para criar transferência SPL Token',
+        'Fonte: fromAta, Destino: toAta',
+        toAtaExists 
+          ? 'ATA destino já existe, use transfer() diretamente'
+          : 'ATA destino NÃO existe, use getOrCreateAssociatedTokenAccount() antes de transfer()',
       ];
     } else {
       txData.contractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
