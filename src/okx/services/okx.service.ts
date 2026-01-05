@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { OkxAuthService } from './okx-auth.service';
 
@@ -31,6 +31,8 @@ interface WithdrawUsdtParams {
 
 @Injectable()
 export class OkxService {
+    private readonly logger = new Logger(OkxService.name);
+    
     constructor(private readonly authService: OkxAuthService) { }
 
     async getAccountBalance() {
@@ -247,6 +249,52 @@ export class OkxService {
         const currencies = response.data?.data || [];
         const chainData = currencies.find((c: any) => c.chain === chain);
         return chainData?.minFee || '0';
+    }
+
+    async buyCryptoWithUsdt(crypto: string, usdtAmount: number): Promise<any> {
+        const method = 'POST';
+        const requestPath = '/api/v5/trade/order';
+        const instId = `${crypto}-USDT`;
+        const bodyObj = {
+            instId: instId,
+            tdMode: 'cash',
+            side: 'buy',
+            ordType: 'market',
+            sz: usdtAmount.toString(),
+            tgtCcy: 'quote_ccy'
+        };
+        const body = JSON.stringify(bodyObj);
+        const headers = this.authService.getAuthHeaders(method, requestPath, body);
+        const apiUrl = process.env.OKX_API_URL || 'https://www.okx.com';
+
+        this.logger.log(`📈 Comprando ${crypto} com ${usdtAmount} USDT...`);
+        const response = await axios.post(`${apiUrl}${requestPath}`, bodyObj, { headers });
+        return response.data;
+    }
+
+    async getCryptoBalance(currency: string): Promise<string> {
+        const response = await this.getAccountBalance();
+        const details = response.data[0]?.details || [];
+        const crypto = details.find((d: any) => d.ccy === currency);
+        return crypto ? crypto.availBal : '0';
+    }
+
+    async transferCryptoToFunding(currency: string, amount: string): Promise<any> {
+        const method = 'POST';
+        const requestPath = '/api/v5/asset/transfer';
+        const bodyObj = {
+            ccy: currency,
+            amt: amount,
+            from: '18',
+            to: '6'
+        };
+        const body = JSON.stringify(bodyObj);
+        const headers = this.authService.getAuthHeaders(method, requestPath, body);
+        const apiUrl = process.env.OKX_API_URL || 'https://www.okx.com';
+
+        this.logger.log(`💱 Transferindo ${amount} ${currency} para funding...`);
+        const response = await axios.post(`${apiUrl}${requestPath}`, bodyObj, { headers });
+        return response.data;
     }
 
     async buyBrlAndReturnUsdtBalance(brlAmount: number) {

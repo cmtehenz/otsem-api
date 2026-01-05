@@ -3739,6 +3739,60 @@
         ]
       }
     },
+    "/okx/buy-crypto": {
+      "post": {
+        "operationId": "OkxController_buyCrypto",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Comprar crypto (SOL, TRX, etc) com USDT",
+        "tags": [
+          "OKX"
+        ]
+      }
+    },
+    "/okx/crypto-balance": {
+      "get": {
+        "operationId": "OkxController_getCryptoBalance",
+        "parameters": [
+          {
+            "name": "currency",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Saldo de qualquer crypto na conta trading",
+        "tags": [
+          "OKX"
+        ]
+      }
+    },
+    "/okx/transfer-crypto-to-funding": {
+      "post": {
+        "operationId": "OkxController_transferCryptoToFunding",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Transferir crypto de trading para funding (para saque)",
+        "tags": [
+          "OKX"
+        ]
+      }
+    },
     "/tron/hot-wallet": {
       "get": {
         "operationId": "TronController_getHotWalletInfo",
