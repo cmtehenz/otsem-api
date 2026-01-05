@@ -171,6 +171,24 @@ export class SellProcessingService {
   }
 
   private async creditBalanceToCustomer(conversion: any) {
+    const existingTransaction = await this.prisma.transaction.findFirst({
+      where: {
+        accountId: conversion.accountId,
+        type: 'CONVERSION',
+        subType: 'SELL',
+        externalId: conversion.id,
+      },
+    });
+    
+    if (existingTransaction) {
+      this.logger.log(`[SELL] Transação já existe para conversão ${conversion.id}, apenas atualizando status`);
+      await this.prisma.conversion.update({
+        where: { id: conversion.id },
+        data: { status: 'COMPLETED', completedAt: new Date() },
+      });
+      return;
+    }
+    
     const usdtAmount = parseFloat(conversion.usdtPurchased.toString());
     const spreadPercent = parseFloat(conversion.spreadPercent.toString());
     const brlExchanged = parseFloat(conversion.brlExchanged.toString());
@@ -217,7 +235,7 @@ export class SellProcessingService {
           balanceAfter: new Decimal(balanceAfter),
           description: `Venda de ${usdtAmount} USDT → R$ ${brlToCustomer.toFixed(2)} (crédito em conta)`,
           status: 'COMPLETED',
-          externalId: conversion.txHash || conversion.id,
+          externalId: conversion.id,
           externalData: {
             usdtAmount,
             brlExchanged,
