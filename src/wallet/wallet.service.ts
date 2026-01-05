@@ -577,6 +577,7 @@ export class WalletService {
         data: {
           accountId: account.id,
           type: TransactionType.CONVERSION,
+          subType: 'BUY',
           status: 'COMPLETED',
           amount: brlAmount,
           balanceBefore,

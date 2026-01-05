@@ -214,6 +214,7 @@ export class SellProcessingService {
         data: {
           accountId: conversion.accountId,
           type: 'CONVERSION',
+          subType: 'SELL',
           amount: new Decimal(brlToCustomer),
           balanceBefore: new Decimal(balanceBefore),
           balanceAfter: new Decimal(balanceBefore),
@@ -320,6 +321,7 @@ export class SellProcessingService {
         data: {
           accountId,
           type: 'CONVERSION',
+          subType: 'SELL',
           amount: new Decimal(brlLiquido),
           balanceBefore: new Decimal(balanceBefore),
           balanceAfter: new Decimal(balanceAfter),

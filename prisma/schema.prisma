@@ -483,8 +483,9 @@ model Transaction {
   id        String @id @default(uuid())
   accountId String
 
-  type   TransactionType
-  status TransactionStatus
+  type    TransactionType
+  subType String?
+  status  TransactionStatus
 
   amount        Decimal @db.Decimal(15, 2)
   balanceBefore Decimal @db.Decimal(15, 2)

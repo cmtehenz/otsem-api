@@ -150,3 +150,25 @@ O sistema possui um cron job que roda **a cada minuto** para processar vendas au
 - **Cliente paga apenas spread**: 0.95% (padrão, configurável por usuário)
 - **spreadPercent** armazenado como decimal (0.0095 = 0.95%)
 - **netProfit = spreadBrl - totalOkxFees - affiliateCommission**
+
+## Transaction subType Field
+
+A partir de 05/01/2026, transações de conversão incluem o campo `subType` para diferenciar COMPRA de VENDA:
+
+| type | subType | Descrição | Valor |
+|------|---------|-----------|-------|
+| CONVERSION | BUY | Compra de USDT com BRL | Negativo (saída de BRL) |
+| CONVERSION | SELL | Venda de USDT por BRL | Positivo (entrada de BRL via PIX) |
+
+**Frontend deve verificar:**
+```javascript
+if (tx.type === 'CONVERSION') {
+  if (tx.subType === 'SELL') {
+    // Mostrar como "Venda de USDT" com valor POSITIVO
+  } else if (tx.subType === 'BUY') {
+    // Mostrar como "Compra de USDT" com valor NEGATIVO
+  }
+}
+```
+
+**Para transações antigas sem subType:** verificar a `description` - se começa com "Venda" é SELL, senão é BUY.
