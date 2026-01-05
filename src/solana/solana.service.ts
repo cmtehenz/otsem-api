@@ -29,15 +29,20 @@ export class SolanaService implements OnModuleInit {
   async onModuleInit() {
     this.connection = new Connection(RPC_ENDPOINT, 'confirmed');
     
-    const privateKey = this.configService.get<string>('SOLANA_HOT_WALLET_PRIVATE_KEY');
+    const privateKeyRaw = this.configService.get<string>('SOLANA_HOT_WALLET_PRIVATE_KEY');
+    const privateKey = privateKeyRaw?.trim();
+    
     if (privateKey) {
       try {
+        this.logger.log(`🔑 Tentando decodificar chave Solana (${privateKey.length} chars)`);
         const decoded = bs58.decode(privateKey);
+        this.logger.log(`🔑 Decoded ${decoded.length} bytes`);
         this.hotWallet = Keypair.fromSecretKey(decoded);
         this.hotWalletAddress = this.hotWallet.publicKey.toBase58();
         this.logger.log(`✅ Solana hot wallet inicializada: ${this.hotWalletAddress}`);
       } catch (error: any) {
         this.logger.error(`❌ Erro ao inicializar hot wallet Solana: ${error.message}`);
+        this.logger.error(`❌ Primeiros 10 chars: ${privateKey.substring(0, 10)}...`);
       }
     } else {
       this.logger.warn('⚠️ Solana hot wallet não configurada - apenas leitura');
