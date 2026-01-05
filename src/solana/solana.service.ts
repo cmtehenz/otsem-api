@@ -35,7 +35,19 @@ export class SolanaService implements OnModuleInit {
     if (privateKey) {
       try {
         this.logger.log(`🔑 Tentando decodificar chave Solana (${privateKey.length} chars)`);
-        const decoded = bs58.decode(privateKey);
+        
+        let decoded: Uint8Array;
+        
+        if (privateKey.length === 128 && /^[0-9a-fA-F]+$/.test(privateKey)) {
+          this.logger.log('🔑 Formato detectado: HEX (128 chars)');
+          decoded = Uint8Array.from(Buffer.from(privateKey, 'hex'));
+        } else if (privateKey.length === 88 || privateKey.length === 87) {
+          this.logger.log('🔑 Formato detectado: Base58');
+          decoded = bs58.decode(privateKey);
+        } else {
+          decoded = bs58.decode(privateKey);
+        }
+        
         this.logger.log(`🔑 Decoded ${decoded.length} bytes`);
         this.hotWallet = Keypair.fromSecretKey(decoded);
         this.hotWalletAddress = this.hotWallet.publicKey.toBase58();
