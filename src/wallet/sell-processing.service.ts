@@ -178,7 +178,7 @@ export class SellProcessingService {
       throw new Error('Cliente não possui chave PIX cadastrada (CPF, CNPJ ou chave principal)');
     }
     
-    const tipoChave = customer.cpf ? 'CPF' : customer.cnpj ? 'CNPJ' : 'ALEATORIA';
+    const tipoChave = customer.cpf ? 'CPF' : customer.cnpj ? 'CNPJ' : 'CHAVE';
     
     const usdtAmount = parseFloat(conversion.usdtPurchased.toString());
     const spreadPercent = parseFloat(conversion.spreadPercent.toString());
