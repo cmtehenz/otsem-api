@@ -223,6 +223,193 @@
         ]
       }
     },
+    "/customers/kyc-upgrade-requests": {
+      "post": {
+        "operationId": "KycUpgradeController_createRequest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "targetLevel": {
+                    "type": "string",
+                    "enum": [
+                      "LEVEL_2",
+                      "LEVEL_3"
+                    ]
+                  },
+                  "documents": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Criar solicitação de upgrade de KYC",
+        "tags": [
+          "KYC Upgrade"
+        ]
+      }
+    },
+    "/customers/me/kyc-upgrade-requests": {
+      "get": {
+        "operationId": "KycUpgradeController_getMyRequests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar minhas solicitações de upgrade",
+        "tags": [
+          "KYC Upgrade"
+        ]
+      }
+    },
+    "/admin/kyc-upgrade-requests": {
+      "get": {
+        "operationId": "KycUpgradeController_listRequests",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todas as solicitações de upgrade (admin)",
+        "tags": [
+          "KYC Upgrade"
+        ]
+      }
+    },
+    "/admin/kyc-upgrade-requests/{id}": {
+      "get": {
+        "operationId": "KycUpgradeController_getRequestDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalhes de uma solicitação (admin)",
+        "tags": [
+          "KYC Upgrade"
+        ]
+      }
+    },
+    "/admin/kyc-upgrade-requests/{id}/approve": {
+      "post": {
+        "operationId": "KycUpgradeController_approveRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aprovar solicitação de upgrade (admin)",
+        "tags": [
+          "KYC Upgrade"
+        ]
+      }
+    },
+    "/admin/kyc-upgrade-requests/{id}/reject": {
+      "post": {
+        "operationId": "KycUpgradeController_rejectRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rejeitar solicitação de upgrade (admin)",
+        "tags": [
+          "KYC Upgrade"
+        ]
+      }
+    },
     "/customers": {
       "get": {
         "operationId": "CustomersController_list",
@@ -915,193 +1102,6 @@
         "summary": "Rejeitar KYC",
         "tags": [
           "Customers"
-        ]
-      }
-    },
-    "/customers/kyc-upgrade-requests": {
-      "post": {
-        "operationId": "KycUpgradeController_createRequest",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "targetLevel": {
-                    "type": "string",
-                    "enum": [
-                      "LEVEL_2",
-                      "LEVEL_3"
-                    ]
-                  },
-                  "documents": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "binary"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Criar solicitação de upgrade de KYC",
-        "tags": [
-          "KYC Upgrade"
-        ]
-      }
-    },
-    "/customers/me/kyc-upgrade-requests": {
-      "get": {
-        "operationId": "KycUpgradeController_getMyRequests",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Listar minhas solicitações de upgrade",
-        "tags": [
-          "KYC Upgrade"
-        ]
-      }
-    },
-    "/admin/kyc-upgrade-requests": {
-      "get": {
-        "operationId": "KycUpgradeController_listRequests",
-        "parameters": [
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "PENDING",
-                "APPROVED",
-                "REJECTED"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Listar todas as solicitações de upgrade (admin)",
-        "tags": [
-          "KYC Upgrade"
-        ]
-      }
-    },
-    "/admin/kyc-upgrade-requests/{id}": {
-      "get": {
-        "operationId": "KycUpgradeController_getRequestDetails",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Detalhes de uma solicitação (admin)",
-        "tags": [
-          "KYC Upgrade"
-        ]
-      }
-    },
-    "/admin/kyc-upgrade-requests/{id}/approve": {
-      "post": {
-        "operationId": "KycUpgradeController_approveRequest",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Aprovar solicitação de upgrade (admin)",
-        "tags": [
-          "KYC Upgrade"
-        ]
-      }
-    },
-    "/admin/kyc-upgrade-requests/{id}/reject": {
-      "post": {
-        "operationId": "KycUpgradeController_rejectRequest",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Rejeitar solicitação de upgrade (admin)",
-        "tags": [
-          "KYC Upgrade"
         ]
       }
     },
