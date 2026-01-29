@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -104,7 +105,7 @@ export class AuthService {
     const exists = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (exists) throw new BadRequestException('email_in_use');
+    if (exists) throw new ConflictException('email_in_use');
 
     // Validate and determine customer type, KYC level, and account status
     let customerType: CustomerType = dto.type || CustomerType.PF;
