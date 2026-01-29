@@ -7,8 +7,9 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { Role } from '@prisma/client';
+import { Role, CustomerType, KycLevel } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
+import { validateCPF, validateCNPJ, cleanDocument } from './utils/document-validator';
 
 const SALT_ROUNDS = 10;
 type JwtPayload = { sub: string; email: string; role: Role; customerId?: string };
@@ -99,11 +100,50 @@ export class AuthService {
     };
   }
 
-  async register(dto: { email: string; password: string; name?: string }) {
+  async register(dto: { email: string; password: string; name?: string; type?: CustomerType; cpf?: string; cnpj?: string }) {
     const exists = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
     if (exists) throw new BadRequestException('email_in_use');
+
+    // Validate and determine customer type and KYC level
+    let customerType: CustomerType = dto.type || CustomerType.PF;
+    let kycLevel: KycLevel = KycLevel.LEVEL_1;
+    let cpf: string | null = null;
+    let cnpj: string | null = null;
+
+    // If CPF or CNPJ is provided, validate it
+    if (dto.cpf) {
+      const cleanCpf = cleanDocument(dto.cpf);
+      if (!validateCPF(cleanCpf)) {
+        throw new BadRequestException('invalid_cpf');
+      }
+      // Check for duplicate CPF
+      const existingCpf = await this.prisma.customer.findUnique({
+        where: { cpf: cleanCpf },
+      });
+      if (existingCpf) throw new BadRequestException('cpf_already_registered');
+
+      cpf = cleanCpf;
+      customerType = CustomerType.PF;
+      kycLevel = KycLevel.LEVEL_1; // Automatic LEVEL_1 for valid CPF
+    }
+
+    if (dto.cnpj) {
+      const cleanCnpj = cleanDocument(dto.cnpj);
+      if (!validateCNPJ(cleanCnpj)) {
+        throw new BadRequestException('invalid_cnpj');
+      }
+      // Check for duplicate CNPJ
+      const existingCnpj = await this.prisma.customer.findUnique({
+        where: { cnpj: cleanCnpj },
+      });
+      if (existingCnpj) throw new BadRequestException('cnpj_already_registered');
+
+      cnpj = cleanCnpj;
+      customerType = CustomerType.PJ;
+      kycLevel = KycLevel.LEVEL_1; // Automatic LEVEL_1 for valid CNPJ
+    }
 
     const hash = await bcrypt.hash(dto.password, SALT_ROUNDS);
 
@@ -124,15 +164,18 @@ export class AuthService {
       select: { id: true, email: true, role: true },
     });
 
-    // Cria o cliente já vinculado ao usuário
+    // Cria o cliente já vinculado ao usuário com KYC level
     const customer = await this.prisma.customer.create({
       data: {
         userId: user.id,
         name: dto.name ?? '',
         email: dto.email,
-        type: 'PF',
+        type: customerType,
+        cpf,
+        cnpj,
+        kycLevel,
       },
-      select: { id: true },
+      select: { id: true, kycLevel: true },
     });
 
     try {
