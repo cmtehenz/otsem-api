@@ -61,14 +61,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Obter dados do usuário autenticado' })
   @ApiResponse({ status: 200, description: 'Dados do usuário' })
   @ApiResponse({ status: 401, description: 'Não autenticado' })
-  me(@Req() req: { user?: MeDto }): MeDto {
-    // req.user vem do JwtStrategy.validate
-    const u = req.user!;
+  me(@Req() req: any) {
+    // req.user vem do JwtStrategy.validate (returns sub, email, role, customerId)
+    const u = req.user;
     return {
-      id: u.id,
+      id: u.sub,
       email: u.email,
-      name: u.name ?? null,
       role: u.role ?? null,
+      customerId: u.customerId ?? null,
     };
   }
 }
