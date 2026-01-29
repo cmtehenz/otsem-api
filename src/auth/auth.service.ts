@@ -106,13 +106,14 @@ export class AuthService {
     });
     if (exists) throw new BadRequestException('email_in_use');
 
-    // Validate and determine customer type and KYC level
+    // Validate and determine customer type, KYC level, and account status
     let customerType: CustomerType = dto.type || CustomerType.PF;
     let kycLevel: KycLevel = KycLevel.LEVEL_1;
+    let accountStatus = 'not_requested' as any; // Default
     let cpf: string | null = null;
     let cnpj: string | null = null;
 
-    // If CPF or CNPJ is provided, validate it
+    // If CPF or CNPJ is provided, validate it and auto-approve LEVEL_1
     if (dto.cpf) {
       const cleanCpf = cleanDocument(dto.cpf);
       if (!validateCPF(cleanCpf)) {
@@ -126,7 +127,8 @@ export class AuthService {
 
       cpf = cleanCpf;
       customerType = CustomerType.PF;
-      kycLevel = KycLevel.LEVEL_1; // Automatic LEVEL_1 for valid CPF
+      kycLevel = KycLevel.LEVEL_1;
+      accountStatus = 'approved'; // Auto-approve LEVEL_1 for valid CPF
     }
 
     if (dto.cnpj) {
@@ -142,7 +144,8 @@ export class AuthService {
 
       cnpj = cleanCnpj;
       customerType = CustomerType.PJ;
-      kycLevel = KycLevel.LEVEL_1; // Automatic LEVEL_1 for valid CNPJ
+      kycLevel = KycLevel.LEVEL_1;
+      accountStatus = 'approved'; // Auto-approve LEVEL_1 for valid CNPJ
     }
 
     const hash = await bcrypt.hash(dto.password, SALT_ROUNDS);
@@ -164,7 +167,7 @@ export class AuthService {
       select: { id: true, email: true, role: true },
     });
 
-    // Cria o cliente já vinculado ao usuário com KYC level
+    // Cria o cliente já vinculado ao usuário com KYC level auto-approved
     const customer = await this.prisma.customer.create({
       data: {
         userId: user.id,
@@ -174,8 +177,9 @@ export class AuthService {
         cpf,
         cnpj,
         kycLevel,
+        accountStatus, // Set approved status for LEVEL_1 when CPF/CNPJ is valid
       },
-      select: { id: true, kycLevel: true },
+      select: { id: true, kycLevel: true, accountStatus: true },
     });
 
     try {
