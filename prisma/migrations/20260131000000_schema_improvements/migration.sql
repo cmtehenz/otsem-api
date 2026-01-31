@@ -76,17 +76,11 @@ ALTER TABLE "conversions"
 -- Novos índices compostos para queries frequentes
 -- =====================================================
 
--- KycUpgradeRequest: index em status (agora como enum)
-CREATE INDEX "kyc_upgrade_requests_status_idx" ON "kyc_upgrade_requests"("status");
-
 -- Wallet: index para busca por isMain
 CREATE INDEX "Wallet_customerId_isMain_idx" ON "Wallet"("customerId", "isMain");
 
 -- Transaction: index composto para queries accountId+type+status
 CREATE INDEX "transactions_accountId_type_status_idx" ON "transactions"("accountId", "type", "status");
-
--- AffiliateCommission: index em status (agora como enum)
-CREATE INDEX "AffiliateCommission_status_idx" ON "AffiliateCommission"("status");
 
 -- Conversion: index composto type+status
 CREATE INDEX "conversions_type_status_idx" ON "conversions"("type", "status");
