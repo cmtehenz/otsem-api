@@ -1,6 +1,7 @@
 // src/inter/services/inter-pix-keys.service.ts
 
 import { Injectable, Logger, BadRequestException, ConflictException } from '@nestjs/common';
+import { PixKeyType } from '@prisma/client';
 import { InterAuthService } from './inter-auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -8,6 +9,14 @@ import {
     InterPixKeyResponse,
     InterPixKeyDeleteResponse,
 } from '../types/inter.types';
+
+/** Mapeia os nomes da API do Banco Inter para o enum PixKeyType */
+const INTER_TO_PIX_KEY_TYPE: Record<string, PixKeyType> = {
+    CPF: PixKeyType.CPF,
+    CNPJ: PixKeyType.CNPJ,
+    EMAIL: PixKeyType.EMAIL,
+    TELEFONE: PixKeyType.PHONE,
+};
 
 @Injectable()
 export class InterPixKeysService {
@@ -98,7 +107,7 @@ export class InterPixKeysService {
                     where: { customerId },
                     data: {
                         pixKey: chave,
-                        pixKeyType: tipoChave,
+                        pixKeyType: INTER_TO_PIX_KEY_TYPE[tipoChave],
                     },
                 });
             }

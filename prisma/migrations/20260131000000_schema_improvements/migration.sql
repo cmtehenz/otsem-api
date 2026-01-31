@@ -41,10 +41,16 @@ ALTER TABLE "kyc_upgrade_requests"
   ALTER COLUMN "status" SET DEFAULT 'PENDING';
 
 -- Payout.pixKeyType: String -> PixKeyType
+-- Normalizar valores não-padrão antes do cast
+UPDATE "Payout" SET "pixKeyType" = 'PHONE' WHERE "pixKeyType" = 'TELEFONE';
+UPDATE "Payout" SET "pixKeyType" = 'RANDOM' WHERE "pixKeyType" NOT IN ('CPF', 'CNPJ', 'EMAIL', 'PHONE', 'RANDOM');
 ALTER TABLE "Payout"
   ALTER COLUMN "pixKeyType" TYPE "PixKeyType" USING "pixKeyType"::"PixKeyType";
 
 -- Account.pixKeyType: String -> PixKeyType (nullable)
+-- Normalizar valores não-padrão antes do cast
+UPDATE "accounts" SET "pixKeyType" = 'PHONE' WHERE "pixKeyType" = 'TELEFONE';
+UPDATE "accounts" SET "pixKeyType" = 'RANDOM' WHERE "pixKeyType" IS NOT NULL AND "pixKeyType" NOT IN ('CPF', 'CNPJ', 'EMAIL', 'PHONE', 'RANDOM');
 ALTER TABLE "accounts"
   ALTER COLUMN "pixKeyType" SET DEFAULT NULL;
 ALTER TABLE "accounts"
@@ -61,6 +67,8 @@ ALTER TABLE "AffiliateCommission"
   ALTER COLUMN "status" SET DEFAULT 'PENDING';
 
 -- Conversion.pixDestKeyType: String -> PixKeyType (nullable)
+UPDATE "conversions" SET "pixDestKeyType" = 'PHONE' WHERE "pixDestKeyType" = 'TELEFONE';
+UPDATE "conversions" SET "pixDestKeyType" = NULL WHERE "pixDestKeyType" IS NOT NULL AND "pixDestKeyType" NOT IN ('CPF', 'CNPJ', 'EMAIL', 'PHONE', 'RANDOM');
 ALTER TABLE "conversions"
   ALTER COLUMN "pixDestKeyType" TYPE "PixKeyType" USING "pixDestKeyType"::"PixKeyType";
 

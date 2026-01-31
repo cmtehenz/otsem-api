@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { KycLevel, KycUpgradeRequest, Customer } from '@prisma/client';
+import { KycLevel, KycUpgradeRequest, KycUpgradeRequestStatus, Customer } from '@prisma/client';
 
 interface DocumentInfo {
   name: string;
@@ -85,7 +85,7 @@ export class KycUpgradeService {
     return { data: requests };
   }
 
-  async listRequests(status?: string) {
+  async listRequests(status?: KycUpgradeRequestStatus) {
     const where = status ? { status } : {};
 
     const requests = await this.prisma.kycUpgradeRequest.findMany({

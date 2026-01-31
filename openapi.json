@@ -1,6 +1,21 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/health": {
+      "get": {
+        "operationId": "AppController_healthCheck",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Health check — verifica status da API e banco de dados",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
     "/accounts/{customerId}/summary": {
       "get": {
         "operationId": "AccountsController_getAccountSummary",
@@ -1523,6 +1538,99 @@
         ]
       }
     },
+    "/statements/pix/account-holders/{accountHolderId}": {
+      "get": {
+        "operationId": "StatementsController_getPixTransactions",
+        "parameters": [
+          {
+            "name": "accountHolderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar transações PIX (PIX_IN e PIX_OUT) por accountHolderId",
+        "tags": [
+          "Statements"
+        ]
+      }
+    },
+    "/pix/transactions/account-holders/{accountHolderId}": {
+      "get": {
+        "operationId": "PixTransactionsController_getPixTransactions",
+        "parameters": [
+          {
+            "name": "accountHolderId",
+            "required": true,
+            "in": "path",
+            "description": "ID do account holder",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número da página (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Limite por página (default: 20)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar transações PIX (incoming and outgoing) por accountHolderId",
+        "tags": [
+          "PIX Transactions"
+        ]
+      }
+    },
     "/kyc/didit": {
       "post": {
         "operationId": "DiditController_handleVerificationWebhook",
@@ -2769,6 +2877,26 @@
         ]
       }
     },
+    "/wallet/send-usdt": {
+      "post": {
+        "operationId": "WalletController_sendUsdt",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enviar USDT de uma wallet custodial para endereço externo",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/wallet/buy-usdt-with-brl": {
       "post": {
         "operationId": "WalletController_buyUsdtWithBrl",
@@ -2882,6 +3010,47 @@
           }
         ],
         "summary": "Submeter venda após transação assinada no frontend",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/wallet/conversions": {
+      "get": {
+        "operationId": "WalletController_getConversions",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "BUY",
+                "SELL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar conversões USDT (formato frontend)",
         "tags": [
           "Wallet"
         ]

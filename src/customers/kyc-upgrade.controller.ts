@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { KycUpgradeService } from './kyc-upgrade.service';
-import { KycLevel } from '@prisma/client';
+import { KycLevel, KycUpgradeRequestStatus } from '@prisma/client';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -101,7 +101,7 @@ export class KycUpgradeController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Listar todas as solicitações de upgrade (admin)' })
   @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED'] })
-  async listRequests(@Query('status') status?: string) {
+  async listRequests(@Query('status') status?: KycUpgradeRequestStatus) {
     return this.kycUpgradeService.listRequests(status);
   }
 

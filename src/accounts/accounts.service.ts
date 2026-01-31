@@ -1,6 +1,7 @@
 // src/accounts/accounts.service.ts
 
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { PixKeyType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccountSummary } from './types/account-summary.type';
 import { PaymentSummary } from './types/payment-summary.type';
@@ -35,7 +36,7 @@ export class AccountsService {
                     balance: 0,
                     status: 'active',
                     pixKey: pixKey || null, // Chave Pix opcional (cadastrada manualmente)
-                    pixKeyType: pixKey ? 'MANUAL' : null,
+                    pixKeyType: pixKey ? PixKeyType.RANDOM : null,
                 },
             });
 
@@ -56,7 +57,7 @@ export class AccountsService {
     async updatePixKey(
         customerId: string,
         pixKey: string,
-        pixKeyType: string = 'MANUAL'
+        pixKeyType: PixKeyType = PixKeyType.RANDOM,
     ): Promise<any> {
         this.logger.log(`🔑 Atualizando chave Pix do customer ${customerId}: ${pixKey}`);
 
