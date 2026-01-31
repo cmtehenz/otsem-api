@@ -124,6 +124,20 @@ enum TransactionStatus {
   CANCELED
 }
 
+// ---- Novos enums para campos que eram String ----
+
+enum KycUpgradeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CommissionStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
 // ==================== AUTH ====================
 
 model User {
@@ -132,9 +146,10 @@ model User {
   password             String?
   name                 String?
   phone                String?
-  profileImage         String? // <--- Adicione este campo
+  profileImage         String?
   address              String?
   createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @default(now()) @updatedAt
   kycStatus            String?
   has2FA               Boolean   @default(false)
   hasBiometric         Boolean   @default(false)
@@ -143,7 +158,7 @@ model User {
   notificationsEnabled Boolean   @default(true)
   spreadValue          Decimal?  @default(0.9905) @db.Decimal(6, 4)
   passwordChangedAt    DateTime?
-  role                 Role      @default(CUSTOMER) // <--- Adicione este campo
+  role                 Role      @default(CUSTOMER)
 
   customers           Customer[]
   passwordResetTokens PasswordResetToken[]
@@ -181,8 +196,8 @@ model RefreshToken {
 
 model Customer {
   id     String  @id @default(cuid())
-  userId String? // deixe opcional por ENQUANTO para permitir backfill
-  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   type  CustomerType
   name  String
@@ -238,6 +253,7 @@ model Customer {
   chargebacks      Chargeback[]
   conversions      Conversion[]
   kycUpgradeRequests KycUpgradeRequest[]
+  affiliateCommissions AffiliateCommission[]
 
   @@index([email])
   @@index([cpf])
@@ -256,6 +272,9 @@ model Address {
   zipCode      String?
   city         String?
   state        String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
   customer   Customer? @relation(fields: [customerId], references: [id])
   customerId String?   @unique
@@ -280,7 +299,7 @@ model KycLevelConfig {
   customerType  CustomerType
   monthlyLimit  Decimal      @db.Decimal(18, 2)  // 0 = ilimitado
   description   String?
-  
+
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -291,17 +310,17 @@ model KycLevelConfig {
 model KycUpgradeRequest {
   id            String       @id @default(uuid())
   customerId    String
-  customer      Customer     @relation(fields: [customerId], references: [id])
-  
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
   currentLevel  KycLevel
   targetLevel   KycLevel
-  status        String       @default("PENDING")  // PENDING, APPROVED, REJECTED
+  status        KycUpgradeRequestStatus @default(PENDING)
   documents     Json         @default("[]")       // [{ name, objectPath }]
-  
+
   adminNotes    String?
   reviewedBy    String?
   reviewedAt    DateTime?
-  
+
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -317,6 +336,9 @@ model Ownership {
   cpf             String
   birthday        DateTime
   isAdministrator Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
@@ -374,7 +396,6 @@ model Payment {
   errorMessage String?       @db.Text
 
   bankPayload Json
-  // externalId  String? @unique
 
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -427,6 +448,7 @@ model Refund {
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([customerId])
 }
@@ -470,6 +492,7 @@ model Wallet {
   @@index([customerId])
   @@index([customerId, network])
   @@index([customerId, currency])
+  @@index([customerId, isMain])
 }
 
 model Payout {
@@ -487,7 +510,7 @@ model Payout {
   beneficiaryName      String
   beneficiaryTaxNumber String
   pixKey               String
-  pixKeyType           String
+  pixKeyType           PixKeyType
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -507,8 +530,8 @@ model Account {
   customerId String  @unique
   balance    Decimal @default(0) @db.Decimal(15, 2)
 
-  pixKey     String? @unique
-  pixKeyType String? @default("RANDOM")
+  pixKey     String?     @unique
+  pixKeyType PixKeyType? @default(RANDOM)
 
   dailyLimit   Decimal @default(5000) @db.Decimal(15, 2)
   monthlyLimit Decimal @default(20000) @db.Decimal(15, 2)
@@ -577,9 +600,11 @@ model Transaction {
   relatedTx     Transaction? @relation("RelatedTransactions", fields: [relatedTxId], references: [id], onDelete: SetNull)
   counterpartTx Transaction? @relation("RelatedTransactions")
   payouts       Payout[]
+  affiliateCommissions AffiliateCommission[]
 
   @@index([accountId, createdAt])
   @@index([type, status])
+  @@index([accountId, type, status])
   @@index([externalId])
   @@index([endToEnd])
   @@map("transactions")
@@ -700,9 +725,10 @@ model Affiliate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Clientes indicados
+  // Relações
   referredCustomers Customer[]
   commissions       AffiliateCommission[]
+  conversions       Conversion[]
 
   @@index([code])
   @@index([email])
@@ -721,13 +747,15 @@ model AffiliateCommission {
   spreadAffiliate   Decimal @db.Decimal(10, 6) // Spread do afiliado
   commissionBrl     Decimal @db.Decimal(18, 2) // Comissão em BRL
 
-  status String    @default("PENDING") // PENDING, PAID, CANCELLED
+  status CommissionStatus @default(PENDING)
   paidAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  affiliate Affiliate @relation(fields: [affiliateId], references: [id])
+  affiliate   Affiliate    @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
   @@index([affiliateId])
   @@index([customerId])
@@ -781,7 +809,7 @@ model Conversion {
   txHash        String?
 
   pixDestKey     String?
-  pixDestKeyType String?
+  pixDestKeyType PixKeyType?
 
   affiliateId         String?
   affiliateCommission Decimal? @db.Decimal(18, 2)
@@ -800,13 +828,15 @@ model Conversion {
   updatedAt   DateTime  @updatedAt
   completedAt DateTime?
 
-  customer Customer @relation(fields: [customerId], references: [id])
-  account  Account  @relation(fields: [accountId], references: [id])
-  wallet   Wallet?  @relation(fields: [walletId], references: [id])
+  customer  Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  account   Account    @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  wallet    Wallet?    @relation(fields: [walletId], references: [id], onDelete: SetNull)
+  affiliate Affiliate? @relation(fields: [affiliateId], references: [id], onDelete: SetNull)
 
   @@index([customerId])
   @@index([status])
   @@index([type])
+  @@index([type, status])
   @@index([createdAt])
   @@index([affiliateId])
   @@map("conversions")
